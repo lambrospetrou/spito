@@ -1,11 +1,12 @@
 package main
 
 import (
-	"encoding/base64"
+	//"encoding/base64"
 	"encoding/json"
 	"errors"
+	"github.com/lambrospetrou/goencoding/lpenc"
 	"github.com/lambrospetrou/spitty/lpdb"
-	"strconv"
+	//"strconv"
 	"time"
 )
 
@@ -15,6 +16,7 @@ type Spit struct {
 	Exp         int       `json:"exp"`
 	Content     string    `json:"content"`
 	DateCreated time.Time `json:"date_created"`
+	IsURL       bool      `json:"is_url"`
 }
 
 func (spit *Spit) FormattedCreatedTime() string {
@@ -26,6 +28,7 @@ func (spit *Spit) Save() error {
 	if spit.Exp < 0 {
 		spit.Exp = 0
 	}
+	spit.IsURL = isUrl(spit.Content)
 	db, err := lpdb.CDBInstance()
 	if err != nil {
 		return errors.New("Could not get instance of Couchbase")
@@ -73,7 +76,8 @@ func NewSpit() (*Spit, error) {
 		return nil, errors.New("Could not create unique id for Spit.")
 	}
 	spit.IdRaw = spit_raw_id
-	spit.Id = base64.URLEncoding.EncodeToString([]byte(strconv.FormatUint(spit.IdRaw, 10)))
+	//spit.Id = base64.URLEncoding.EncodeToString([]byte(strconv.FormatUint(spit.IdRaw, 10)))
+	spit.Id = lpenc.Base62Encoding.Encode(spit.IdRaw)
 	//spit.DateCreated = time.Now()
 	//spit.Exp = 0
 	return spit, nil

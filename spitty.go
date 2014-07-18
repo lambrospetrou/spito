@@ -1,11 +1,11 @@
 package main
 
 import (
-	"encoding/base64"
+	//"encoding/base64"
 	"fmt"
+	"github.com/lambrospetrou/goencoding/lpenc"
 	"html/template"
 	"net/http"
-	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -61,13 +61,21 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 			http.NotFound(w, r)
 			return
 		}
-		// check for base64 valid id
-		bytes, err := base64.URLEncoding.DecodeString(m[2])
-		if err != nil {
-			http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
-			return
-		}
-		_, err = strconv.ParseUint(string(bytes), 10, 64)
+		/*
+			// check for base64 valid id
+			bytes, err := base64.URLEncoding.DecodeString(m[2])
+			if err != nil {
+				http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
+				return
+			}
+			_, err = strconv.ParseUint(string(bytes), 10, 64)
+			if err != nil {
+				http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
+				return
+			}
+		*/
+		n, err := lpenc.Base62Encoding.Decode(m[2])
+		fmt.Println(m[2], n, err)
 		if err != nil {
 			http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
 			return
@@ -80,14 +88,15 @@ func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	// fetch the Spit with the requested id
 	spit, err := LoadSpit(id)
 	if err != nil {
-		fmt.Println(err.Error())
 		http.NotFound(w, r)
 		return
 	}
+	fmt.Println("ids: ", spit.IdRaw, spit.Id)
 	// check if the Spit content is a URL
-	spitUrl, err := isUrl(spit.Content)
-	if err == nil {
-		http.Redirect(w, r, spitUrl.String(), http.StatusMovedPermanently)
+
+	if spit.IsURL {
+		fmt.Println("valid url: ", spit.Content)
+		http.Redirect(w, r, spit.Content, http.StatusMovedPermanently)
 		return
 	}
 
@@ -118,7 +127,11 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 		renderTemplate(w, "add", "")
 		return
 	} else if strings.ToLower(r.Method) == "post" {
+		// TODO make sure the data we want exist
+
+		// create the new Spit
 		spit, err := NewSpit()
+		fmt.Println("new: ", spit.Id, spit.IdRaw)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -129,8 +142,6 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		spit.Content = r.FormValue("content")
 		spit.Save()
-
-		//http.Redirect(w, r, "/v/"+spit.Id, http.StatusFound)
 
 		bundle := &TemplateBundle{
 			Spit:   spit,
@@ -185,11 +196,3 @@ func main() {
 }
 
 //////////////////////// HELPERS ////////////////////
-
-func isUrl(u string) (*url.URL, error) {
-	spitUrl, err := url.Parse(strings.Trim(u, " "))
-	if err == nil {
-		return spitUrl, nil
-	}
-	return nil, err
-}
