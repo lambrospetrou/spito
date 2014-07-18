@@ -1,0 +1,16 @@
+{{ template "header" }}
+
+<h1>New post</h1>
+<form action="/a" method="POST">
+	<label for="exp">spit countdown to expiry (0: infinity) - seconds</label>
+	<input id="exp" name="exp" type="number" step="1" min="0" value="3600" required/>
+	<div>
+    	<label for="content">spit content</label>
+        <textarea id="content" name="content" rows="30" cols="80" required></textarea>
+    </div>
+	<div>
+		<input type="submit" value="Save">
+	</div>
+</form>
+
+{{ template "footer" }}

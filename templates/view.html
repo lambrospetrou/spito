@@ -1,0 +1,17 @@
+{{template "header" .Header}}
+
+<article>
+    <header>
+        <h1 class="post-title">{{ .Spit.Id }}</h1>
+        <small class="post-meta-top">{{ .Spit.FormattedCreatedTime }}</small>
+    </header>    
+    <section class="post-body">
+    	{{ .Spit.Content }}
+    </section>
+
+    <section class="post-meta-bottom">
+        <small class="post-meta-top">expiry: {{.Spit.Exp}}</small>
+    </section>
+</article>
+
+{{template "footer" .Footer}}
