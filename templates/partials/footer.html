@@ -5,7 +5,11 @@
     <footer id="footer-wrapper" class="outer-section">
         <div id="inner-footer" class="inner-section">
         	<div id="footer-copyright">
-            	<p>&copy;{{ .Year }} Lambros Petrou</p>
+                {{ if . }}
+                    <p>&copy;{{ .Year }} Lambros Petrou</p>
+                {{else}}
+                    <p>&copy;2014 Lambros Petrou</p>
+                {{end}}
         	</div>
             <div id="footer-links">
             	<p><a href="https://www.lambrospetrou.com" title="Lambros Petrou homepage">www.lambrospetrou.com</a></p>

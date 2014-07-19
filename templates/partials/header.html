@@ -3,7 +3,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <title>Spitty - {{.Title}}</title>
+    {{ if . }}
+        <title>Spitty - {{.Title}}</title>
+    {{else}}
+        <title>Spitty - new spit</title>
+    {{end}}
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Spitty, is the new URL shortener and text sharing service provided by Lambros Petrou."/>
     <meta name="keywords" content="Lambros,Petrou,lambrospower,LPSofts,portfolio,programming,developer,showcase,spitty, Spitty, URL shorten, URL shortener, lp.gs" />
