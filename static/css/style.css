@@ -342,6 +342,13 @@ input[type="button"]:hover, input[type="submit"]:hover, button:hover{
 .usage-tips {
 	margin-top: 20px;
 }
+	.usage-tips h3{
+		cursor: pointer;
+	}
+
+	.usage-tips ul {
+		display: none;
+	}
 
 
 /******************************

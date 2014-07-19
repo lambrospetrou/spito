@@ -24,13 +24,24 @@
 </form>
 
 <div class="usage-tips">
-	<h3>usage tips</h3>
+	<h3 onclick="displayHideTips();">usage tips (click to toggle)</h3>
 	<ul>
 		<li><strong>Spitty</strong> can be used like every other <strong>URL link shortener</strong> (ie. <em>is.gd</em> or <em>goo.gl</em>) in order to shrink down long URLs into something less than 20 characters that is easy to share and tell everybody.</li>
 		<li>Additionally, Spitty is a <strong>plain text sharing service</strong> where you can just throw any text inside and generate a super-small link in order to send it over to your friends or colleagues.</li>
 		<li>Specify an expiration time for your spit in order to destroy it when the given seconds have passed.</li>
 		<li>Spit links are immutable, thus cannot be edited after being created and when the expiration time has passed they <strong>are</strong> deleted from our database so no retrieval is possible.</li>
 	</ul>
+	<script>
+		function displayHideTips() {
+			var tips = document.body.querySelector('.usage-tips ul');
+			if ( tips.style.display == "none" || tips.style.display == "" || tips.style.display == undefined ) {
+				tips.style.display = 'block';
+			}else{
+				tips.style.display = 'none';
+			}
+			
+		}
+	</script>
 </div>
 
 {{ template "footer" }}
