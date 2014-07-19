@@ -142,7 +142,7 @@ input, textarea {
 	margin-bottom: 5px;
 	font-family: 'Roboto', 'Open Sans', Arial;
 	outline: none;
-	border: 1px solid #afafaf;
+	border: 1px solid rgb(228, 224, 221);
 	font-size: 16px;
 }
 
@@ -277,9 +277,37 @@ input[type="button"]:hover, input[type="submit"]:hover, button:hover{
 }
 
 .spit-meta-top{
-	font-style: italic;
-	color: rgb(148, 145, 196);
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
 }
+	.spit-meta-top ul {
+		margin: 0;
+		padding: 0;
+		list-style-type: none;
+	}
+		.spit-meta-top ul li {
+			padding: 0;
+			display: inline-block;
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+			margin: 0px 5px 15px 0px;
+		}
+
+		.spit-meta-top ul li a {
+			padding: 5px 10px;
+			border: 0;
+			background-color: rgb(64, 78, 153);
+			opacity: 0.7;
+			color: #ffffff;
+			font-weight: bold;
+		}
+
+			.spit-meta-top ul li a:hover,
+			.spit-meta-top ul li a:focus {
+				opacity: 1;
+				cursor: pointer;
+			}
+
 
 .spit-meta-bottom{
 	margin-top: 10px;

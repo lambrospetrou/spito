@@ -19,6 +19,15 @@
         <h1 id="spit-header" class="spit-title" onclick="selectAll(this.id)" title="Click and then CRTL + C to copy the link">{{.Spit.AbsoluteURL}}</h1>
         <img src="http://chart.apis.google.com/chart?chs=100x100&cht=qr&choe=UTF-8&chl={{.Spit.AbsoluteURL}}"/>
     </header> 
+
+    <section class="spit-meta-top">
+        <small>
+            <ul>
+                <li><a href="{{.Spit.AbsoluteURL}}" title="visit spit link - {{.Spit.AbsoluteURL}}">visit spit link</a></li>
+            </ul>
+        </small>
+    </section>
+
     <section class="spit-body">
         <textarea id="content" name="content" readonly>{{ .Spit.Content }}</textarea>
     </section>

@@ -4,7 +4,7 @@
 <form action="/spitty/add" method="POST">
 	<div>
     	<label for="content">URL or plain text to shorten</label>
-        <textarea id="content" name="content" placeholder="Paste here your URL or text" required></textarea>
+        <textarea id="content" name="content" placeholder="Paste here your URL or plain text" required autofocus></textarea>
     </div>
 	<label for="exp">expire in (0: infinity) - seconds</label>
 	<input id="exp" name="exp" type="number" step="1" min="0" value="3600" required/>
