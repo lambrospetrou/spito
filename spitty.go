@@ -1,9 +1,6 @@
 package main
 
 import (
-	//"encoding/base64"
-	"fmt"
-	"github.com/lambrospetrou/goencoding/lpenc"
 	"html/template"
 	"net/http"
 	"regexp"
@@ -37,7 +34,6 @@ var templates = template.Must(template.ParseFiles(
 	"templates/partials/footer.html",
 	"templates/view.html",
 	"templates/add.html",
-	"templates/add_success.html",
 	"templates/index.html"))
 
 func renderTemplate(w http.ResponseWriter, tmpl string, o interface{}) {
@@ -50,7 +46,7 @@ func renderTemplate(w http.ResponseWriter, tmpl string, o interface{}) {
 
 // v: view
 // d: delete
-var validPath = regexp.MustCompile("^/(v|d)/(.+)$")
+var validPath = regexp.MustCompile("^/(v|spitty[/]del)/(.+)$")
 
 // BLOG HANDLERS
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
@@ -61,52 +57,12 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 			http.NotFound(w, r)
 			return
 		}
-		/*
-			// check for base64 valid id
-			bytes, err := base64.URLEncoding.DecodeString(m[2])
-			if err != nil {
-				http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
-				return
-			}
-			_, err = strconv.ParseUint(string(bytes), 10, 64)
-			if err != nil {
-				http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
-				return
-			}
-		*/
-		n, err := lpenc.Base62Encoding.Decode(m[2])
-		fmt.Println(m[2], n, err)
-		if err != nil {
+		if !ValidateSpitID(m[2]) {
 			http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
 			return
 		}
 		fn(w, r, m[2])
 	}
-}
-
-func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
-	// fetch the Spit with the requested id
-	spit, err := LoadSpit(id)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-	fmt.Println("ids: ", spit.IdRaw, spit.Id)
-	// check if the Spit content is a URL
-
-	if spit.IsURL {
-		fmt.Println("valid url: ", spit.Content)
-		http.Redirect(w, r, spit.Content, http.StatusMovedPermanently)
-		return
-	}
-
-	// display the Spit
-	bundle := &TemplateBundle{
-		Spit:   spit,
-		Footer: &FooterStruct{Year: time.Now().Year()},
-		Header: &HeaderStruct{Title: spit.Id},
-	}
-	renderTemplate(w, "view", bundle)
 }
 
 func deleteHandler(w http.ResponseWriter, r *http.Request, id string) {
@@ -131,7 +87,6 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 
 		// create the new Spit
 		spit, err := NewSpit()
-		fmt.Println("new: ", spit.Id, spit.IdRaw)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -143,50 +98,81 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 		spit.Content = r.FormValue("content")
 		spit.Save()
 
-		bundle := &TemplateBundle{
-			Spit:   spit,
-			Footer: &FooterStruct{Year: time.Now().Year()},
-			Header: &HeaderStruct{Title: spit.Id},
-		}
-		renderTemplate(w, "add_success", bundle)
-
+		http.Redirect(w, r, "/v/"+spit.Id, http.StatusFound)
 		return
 	}
 	http.Error(w, "Not supported method", http.StatusMethodNotAllowed)
 	return
 }
 
+func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
+	// fetch the Spit with the requested id
+	spit, err := LoadSpit(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// display the Spit
+	bundle := &TemplateBundle{
+		Spit:   spit,
+		Footer: &FooterStruct{Year: time.Now().Year()},
+		Header: &HeaderStruct{Title: spit.Id},
+	}
+	renderTemplate(w, "view", bundle)
+}
+
 // show all posts
 func rootHandler(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/a", http.StatusFound)
+	//fmt.Println("path: ", r.URL.Path)
+	var id string = r.URL.Path[1:]
+	if len(id) == 0 {
+		// load the index page
+		renderTemplate(w, "add", "")
+		return
+	}
+
+	// make sure there is a valid Spit ID
+	if !ValidateSpitID(id) {
+		http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
+		return
+	}
+
+	// fetch the Spit with the requested id
+	spit, err := LoadSpit(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// update clicks
+	if err = spit.ClickInc(); err != nil {
+		http.Error(w, "Could not update analytics for Spit", http.StatusInternalServerError)
+		return
+	}
+
+	// check if this Spit is a URL that we should redirect to
+	if spit.IsURL {
+		http.Redirect(w, r, spit.Content, http.StatusMovedPermanently)
+		return
+	}
+	// this is a text Spit so display it
+	http.Redirect(w, r, "/v/"+id, http.StatusFound)
 	return
-	/*
-		//fmt.Fprintf(w, "Hi there, I love you %s\n", r.URL.Path)
-		spits, err := LoadAllSpits()
-		if err != nil {
-			http.Error(w, "Could not load spits", http.StatusInternalServerError)
-			return
-		}
-		bundle := &TemplateBundleIndex{
-			Footer: &FooterStruct{Year: time.Now().Year()},
-			Header: &HeaderStruct{Title: "All spits"},
-			Spits:  spits,
-		}
-		renderTemplate(w, "index", bundle)
-	*/
 }
 
 func main() {
 
 	// add
-	http.HandleFunc("/a", addHandler)
+	http.HandleFunc("/spitty/add", addHandler)
 
 	// delete
-	http.HandleFunc("/d/", makeHandler(deleteHandler))
+	http.HandleFunc("/spitty/del/", makeHandler(deleteHandler))
 
 	// view
 	http.HandleFunc("/v/", makeHandler(viewHandler))
-	http.HandleFunc("/v/ls", rootHandler)
+
+	// if there is a parameter Spit ID call action or just go to homepage
 	http.HandleFunc("/", rootHandler)
 
 	fs := http.FileServer(http.Dir("static"))

@@ -1,16 +1,35 @@
 {{template "header" .Header}}
 
 <article>
+    <script>
+        function selectAll(containerid) {
+            if (document.selection) {
+                var range = document.body.createTextRange();
+                range.moveToElementText(document.getElementById(containerid));
+                range.select();
+            } else if (window.getSelection) {
+                var range = document.createRange();
+                range.selectNode(document.getElementById(containerid));
+                window.getSelection().addRange(range);
+            }
+        }
+    </script>
+
     <header>
-        <h1 class="post-title">{{ .Spit.Id }}</h1>
-        <small class="post-meta-top">{{ .Spit.FormattedCreatedTime }}</small>
-    </header>    
-    <section class="post-body">
-    	{{ .Spit.Content }}
+        <h1 id="spit-header" class="spit-title" onclick="selectAll(this.id)" title="Click and then CRTL + C to copy the link">{{.Spit.AbsoluteURL}}</h1>
+    </header> 
+    <section class="spit-body">
+        <textarea id="content" name="content" readonly>{{ .Spit.Content }}</textarea>
     </section>
 
-    <section class="post-meta-bottom">
-        <small class="post-meta-top">expiry: {{.Spit.Exp}}</small>
+    <section class="spit-meta-bottom">
+        <small>
+            <ul>
+                <li><span class="heading">expiration in (seconds)</span>{{.Spit.Exp}}</li>
+                <li><span class="heading">created</span>{{ .Spit.FormattedCreatedTime }}</li>
+                <li><span class="heading">clicks</span>{{ .Spit.Clicks }}</li>
+            </ul>
+        </small>
     </section>
 </article>
 

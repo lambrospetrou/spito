@@ -10,3 +10,7 @@ func isUrl(u string) bool {
 	_, err := http.Head(u)
 	return err == nil
 }
+
+func AbsoluteSpittyURL(id string) string {
+	return "http://lp.gs/" + id
+}

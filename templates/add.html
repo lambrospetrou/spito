@@ -1,15 +1,24 @@
 {{ template "header" }}
 
-<h1>New post</h1>
-<form action="/a" method="POST">
-	<label for="exp">spit countdown to expiry (0: infinity) - seconds</label>
+<h1>new spit</h1>
+<form action="/spitty/add" method="POST">
+	<div>
+    	<label for="content">content (URL or plain text)</label>
+        <textarea id="content" name="content" placeholder="Paste here your URL or text" required></textarea>
+    </div>
+	<label for="exp">expire in (0: infinity) - seconds</label>
 	<input id="exp" name="exp" type="number" step="1" min="0" value="3600" required/>
 	<div>
-    	<label for="content">spit content</label>
-        <textarea id="content" name="content" rows="30" cols="80" required></textarea>
-    </div>
-	<div>
-		<input type="submit" value="Save">
+		<p>
+			<input type="submit" value="Save">
+		</p>
+	</div>
+
+	<div class="notice">
+		<h3>Notes</h3>
+		<ul>
+			<li>All <strong>lp.gs</strong> URLs are public and can be accessed by anyone who has the link.</li>
+		</ul>
 	</div>
 </form>
 
