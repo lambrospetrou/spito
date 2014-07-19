@@ -10,7 +10,7 @@ import (
 const (
 	_COUCHBASE_URL    = "http://lambrospetrou.com:8091/"
 	_COUCHBASE_POOL   = "default"
-	_COUCHBASE_BUCKET = "blog"
+	_COUCHBASE_BUCKET = "spitty"
 )
 
 type CDB struct {

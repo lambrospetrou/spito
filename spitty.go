@@ -154,6 +154,12 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 	// check if this Spit is a URL that we should redirect to
 	if spit.IsURL {
+		// HTTP 1.1.
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		// HTTP 1.0.
+		w.Header().Set("Pragma", "no-cache")
+		// Proxies
+		w.Header().Set("Expires", "0")
 		http.Redirect(w, r, spit.Content, http.StatusMovedPermanently)
 		return
 	}
