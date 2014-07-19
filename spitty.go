@@ -146,7 +146,8 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// update clicks
-	if err = spit.ClickInc(); err != nil {
+	err = spit.ClickInc()
+	if err != nil {
 		http.Error(w, "Could not update analytics for Spit", http.StatusInternalServerError)
 		return
 	}
