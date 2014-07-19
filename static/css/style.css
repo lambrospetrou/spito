@@ -339,6 +339,10 @@ input[type="button"]:hover, input[type="submit"]:hover, button:hover{
 		background-color: rgb(228, 224, 221);
 	}
 
+.usage-tips {
+	margin-top: 20px;
+}
+
 
 /******************************
  * MAIN CONTENT - INDEX PAGE
