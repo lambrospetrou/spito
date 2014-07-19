@@ -27,9 +27,11 @@ body{
 }
 
 .inner-section{
-	padding: 10px 0px 20px 0px;
+	padding: 10px 10px 20px 10px;
 	margin: 0;
-	width: 700px;
+	width: 90%;
+	max-width: 700px;
+	min-width: 300px;
 	margin: 0 auto;
 }
 
@@ -254,7 +256,24 @@ input[type="button"]:hover, input[type="submit"]:hover, button:hover{
  */
 
 #inner-content header{
-	margin-bottom: 20px;
+	margin-bottom: 10px;
+}
+
+.spit-header {
+	position: relative;
+}
+
+	.spit-header h1 {
+		display: inline-block;
+	}
+	.spit-header img {
+		vertical-align: middle;
+		padding: 0;
+		margin: 0;
+	}
+
+.spit-title{
+	color: rgb(64, 78, 153);
 }
 
 .spit-meta-top{
@@ -275,9 +294,14 @@ input[type="button"]:hover, input[type="submit"]:hover, button:hover{
 	}
 		.spit-meta-bottom ul li {
 			display: inline-block;
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+			margin-bottom: 15px;
 		}
 
 	.spit-meta-bottom .heading {
+		box-sizing: border-box;
+		-moz-box-sizing: border-box;
 		font-weight: bold;
 		font-style: normal;
 		border: 1px dotted rgb(64, 78, 153);
@@ -286,10 +310,6 @@ input[type="button"]:hover, input[type="submit"]:hover, button:hover{
 		margin-right: 5px;
 		background-color: rgb(228, 224, 221);
 	}
-
-.spit-title{
-	color: rgb(64, 78, 153);
-}
 
 
 /******************************
