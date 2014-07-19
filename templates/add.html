@@ -3,14 +3,14 @@
 <h1>new spit</h1>
 <form action="/spitty/add" method="POST">
 	<div>
-    	<label for="content">content (URL or plain text)</label>
+    	<label for="content">URL or plain text to shorten</label>
         <textarea id="content" name="content" placeholder="Paste here your URL or text" required></textarea>
     </div>
 	<label for="exp">expire in (0: infinity) - seconds</label>
 	<input id="exp" name="exp" type="number" step="1" min="0" value="3600" required/>
 	<div>
 		<p>
-			<input type="submit" value="Save">
+			<input type="submit" value="Shorten it &amp; Spit it">
 		</p>
 	</div>
 
