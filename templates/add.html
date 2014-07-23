@@ -5,14 +5,18 @@
 	<div>
     	<label for="content">URL or plain text to shorten
 	    	{{ with . }}
-	    		<span class="form-error">{{ .Errors.Content }}</span>
+	    		{{ with .Errors }}{{ with .Content }}
+	    			<span class="form-error">{{ . }}</span>
+	    		{{ end }}{{ end }}
 	    	{{ end }}
     	</label>
         <textarea id="content" name="content" placeholder="Paste here your URL or plain text" required autofocus></textarea>
     </div>
 	<label for="exp">expire in (0: infinity) - seconds
-		{{ with . }}
-	    	<span class="form-error">{{ .Errors.Exp}}</span>
+		{{ with . }} 
+			{{ with .Errors }}{{ with .Exp }}
+	    		<span class="form-error">{{ .}}</span>
+	    	{{ end }}{{ end }}
 	    {{ end }}
     </label>
 	<input id="exp" name="exp" type="number" step="1" min="0" value="3600" required/>

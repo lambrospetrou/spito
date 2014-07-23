@@ -89,34 +89,14 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 			InputContent string
 			Errors       map[string]string
 		}{}
-		result.Errors = make(map[string]string)
 
-		// validate the fields
-		var expInt int
-		exp := r.PostFormValue("exp")
-		if len(exp) == 0 {
-			result.InputExp = exp
-			result.Errors["Exp"] = "Cannot find expiration time"
-		} else {
-			expInt, err := strconv.Atoi(exp)
-			if err != nil {
-				result.InputExp = exp
-				result.Errors["Exp"] = "Invalid expiration time posted"
-			}
-			if expInt < 0 {
-				result.InputExp = exp
-				result.Errors["Exp"] = "Negative expiration time not allowed"
-			}
-		}
-
-		content := strings.TrimSpace(r.PostFormValue("content"))
-		if len(content) == 0 {
-			result.InputContent = content
-			result.Errors["Content"] = "Empty spit is not allowed"
-		}
+		// do the validation of the parameters
+		result.Errors = ValidateSpitParameters(r)
 
 		// if we have errors display the add page again
 		if len(result.Errors) > 0 {
+			result.InputContent = r.PostFormValue("content")
+			result.InputExp = r.PostFormValue("exp")
 			renderTemplate(w, "add", &result)
 			return
 		}
@@ -127,8 +107,8 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		spit.Exp = expInt
-		spit.Content = content
+		spit.Exp, _ = strconv.Atoi(r.PostFormValue("exp"))
+		spit.Content = strings.TrimSpace(r.PostFormValue("content"))
 
 		// Save the spit and return the view page
 		if err = spit.Save(); err != nil {

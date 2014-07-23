@@ -356,6 +356,9 @@ input[type="button"]:hover, input[type="submit"]:hover, button:hover{
 	color: #920000;
 	display: block;
 }
+.form-error:before{
+	content: "*";
+}
 
 /******************************
  * MAIN CONTENT - INDEX PAGE

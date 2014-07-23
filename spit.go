@@ -5,6 +5,8 @@ import (
 	"errors"
 	"github.com/lambrospetrou/goencoding/lpenc"
 	"github.com/lambrospetrou/spitty/lpdb"
+	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -111,4 +113,28 @@ func NewSpit() (*Spit, error) {
 func ValidateSpitID(id string) bool {
 	_, err := lpenc.Base62Encoding.Decode(id)
 	return err == nil
+}
+
+func ValidateSpitParameters(r *http.Request) map[string]string {
+	errorsMap := make(map[string]string)
+	// validate the fields
+	var expInt int
+	exp := r.PostFormValue("exp")
+	if len(exp) == 0 {
+		errorsMap["Exp"] = "Cannot find expiration time"
+	} else {
+		_, err := strconv.Atoi(exp)
+		if err != nil {
+			errorsMap["Exp"] = "Invalid expiration time posted"
+		}
+		if expInt < 0 {
+			errorsMap["Exp"] = "Negative expiration time not allowed"
+		}
+	}
+
+	content := strings.TrimSpace(r.PostFormValue("content"))
+	if len(content) == 0 {
+		errorsMap["Content"] = "Empty spit is not allowed"
+	}
+	return errorsMap
 }
