@@ -10,26 +10,6 @@ import (
 	"time"
 )
 
-type FooterStruct struct {
-	Year int
-}
-
-type HeaderStruct struct {
-	Title string
-}
-
-type TemplateBundle struct {
-	Spit   *Spit
-	Footer *FooterStruct
-	Header *HeaderStruct
-}
-
-type TemplateBundleIndex struct {
-	Spits  []*Spit
-	Footer *FooterStruct
-	Header *HeaderStruct
-}
-
 var templates = template.Must(template.ParseFiles(
 	"templates/partials/header.html",
 	"templates/partials/footer.html",
@@ -132,10 +112,14 @@ func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	}
 
 	// display the Spit
-	bundle := &TemplateBundle{
+	bundle := &struct {
+		Spit   *Spit
+		Footer *struct{ Year int }
+		Header *struct{ Title string }
+	}{
 		Spit:   spit,
-		Footer: &FooterStruct{Year: time.Now().Year()},
-		Header: &HeaderStruct{Title: spit.Id},
+		Footer: &struct{ Year int }{Year: time.Now().Year()},
+		Header: &struct{ Title string }{Title: spit.Id},
 	}
 	renderTemplate(w, "view", bundle)
 }
@@ -146,7 +130,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	var id string = r.URL.Path[1:]
 	if len(id) == 0 {
 		// load the index page
-		renderTemplate(w, "add", "")
+		renderTemplate(w, "add", nil)
 		return
 	}
 
