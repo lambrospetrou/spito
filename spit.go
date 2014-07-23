@@ -28,9 +28,10 @@ func (spit *Spit) Save() error {
 	if spit.Exp < 0 {
 		spit.Exp = 0
 	}
-	spit.IsURL = isUrl(strings.Trim(spit.Content, " "))
+	content := strings.TrimSpace(spit.Content)
+	spit.IsURL = isUrl(content)
 	if spit.IsURL {
-		spit.Content = strings.Trim(spit.Content, " ")
+		spit.Content = content
 	}
 	db, err := lpdb.CDBInstance()
 	if err != nil {

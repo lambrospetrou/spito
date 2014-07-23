@@ -308,7 +308,6 @@ input[type="button"]:hover, input[type="submit"]:hover, button:hover{
 				cursor: pointer;
 			}
 
-
 .spit-meta-bottom{
 	margin-top: 10px;
 	text-align: right;
@@ -350,6 +349,13 @@ input[type="button"]:hover, input[type="submit"]:hover, button:hover{
 		display: none;
 	}
 
+.form-error {
+	font-size: 90%;
+	font-style: italic;
+	font-weight: bold;
+	color: #920000;
+	display: block;
+}
 
 /******************************
  * MAIN CONTENT - INDEX PAGE

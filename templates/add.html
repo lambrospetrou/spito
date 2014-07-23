@@ -3,25 +3,33 @@
 <h1>new spit</h1>
 <form action="/spitty/add" method="POST">
 	<div>
-    	<label for="content">URL or plain text to shorten</label>
+    	<label for="content">URL or plain text to shorten
+	    	{{ with . }}
+	    		<span class="form-error">{{ .Errors.Content }}</span>
+	    	{{ end }}
+    	</label>
         <textarea id="content" name="content" placeholder="Paste here your URL or plain text" required autofocus></textarea>
     </div>
-	<label for="exp">expire in (0: infinity) - seconds</label>
+	<label for="exp">expire in (0: infinity) - seconds
+		{{ with . }}
+	    	<span class="form-error">{{ .Errors.Exp}}</span>
+	    {{ end }}
+    </label>
 	<input id="exp" name="exp" type="number" step="1" min="0" value="3600" required/>
 	<div>
 		<p>
 			<input type="submit" value="Spit it">
 		</p>
 	</div>
-
-	<div class="notice">
-		<h3>notes</h3>
-		<ul>
-			<li>All <strong>lp.gs</strong> URLs are public and can be accessed by anyone who has the link.</li>
-			<li><strong>Spitty</strong> does not look into the content of your links or text spits and only take some statistics on the spit link itself (ie. number of clicks-visits)</li>
-		</ul>
-	</div>
 </form>
+
+<div class="notice">
+	<h3>notes</h3>
+	<ul>
+		<li>All <strong>lp.gs</strong> URLs are public and can be accessed by anyone who has the link.</li>
+		<li><strong>Spitty</strong> does not look into the content of your links or text spits and only take some statistics on the spit link itself (ie. number of clicks-visits)</li>
+	</ul>
+</div>
 
 <div class="usage-tips">
 	<h3 onclick="displayHideTips();">usage tips (click to toggle)</h3>

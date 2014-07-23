@@ -81,27 +81,64 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 
 func addHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "get" {
-		renderTemplate(w, "add", "")
+		renderTemplate(w, "add", nil)
 		return
 	} else if strings.ToLower(r.Method) == "post" {
-		// TODO make sure the data we want exist
+		result := struct {
+			InputExp     string
+			InputContent string
+			Errors       map[string]string
+		}{}
+		result.Errors = make(map[string]string)
 
-		// create the new Spit
+		// validate the fields
+		var expInt int
+		exp := r.PostFormValue("exp")
+		if len(exp) == 0 {
+			result.InputExp = exp
+			result.Errors["Exp"] = "Cannot find expiration time"
+		} else {
+			expInt, err := strconv.Atoi(exp)
+			if err != nil {
+				result.InputExp = exp
+				result.Errors["Exp"] = "Invalid expiration time posted"
+			}
+			if expInt < 0 {
+				result.InputExp = exp
+				result.Errors["Exp"] = "Negative expiration time not allowed"
+			}
+		}
+
+		content := strings.TrimSpace(r.PostFormValue("content"))
+		if len(content) == 0 {
+			result.InputContent = content
+			result.Errors["Content"] = "Empty spit is not allowed"
+		}
+
+		// if we have errors display the add page again
+		if len(result.Errors) > 0 {
+			renderTemplate(w, "add", &result)
+			return
+		}
+
+		// create the new Spit since everything is fine
 		spit, err := NewSpit()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		spit.Exp, err = strconv.Atoi(r.FormValue("exp"))
-		if err != nil {
-			spit.Exp = 0
-		}
-		spit.Content = r.FormValue("content")
-		spit.Save()
+		spit.Exp = expInt
+		spit.Content = content
 
+		// Save the spit and return the view page
+		if err = spit.Save(); err != nil {
+			http.Error(w, "Could not create your spit, go back and try again",
+				http.StatusInternalServerError)
+			return
+		}
 		http.Redirect(w, r, "/v/"+spit.Id, http.StatusFound)
 		return
-	}
+	} // end of POST
 	http.Error(w, "Not supported method", http.StatusMethodNotAllowed)
 	return
 }
