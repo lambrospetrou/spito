@@ -172,6 +172,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
+	// use all the available cores
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// add

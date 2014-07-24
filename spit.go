@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/lambrospetrou/goencoding/lpenc"
 	"github.com/lambrospetrou/spitty/lpdb"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	"strings"
 	"time"
 )
+
+const SPIT_MAX_CONTENT int = 10000
 
 type Spit struct {
 	IdRaw       uint64    `json:"id_raw"`
@@ -135,6 +138,10 @@ func ValidateSpitParameters(r *http.Request) map[string]string {
 	content := strings.TrimSpace(r.PostFormValue("content"))
 	if len(content) == 0 {
 		errorsMap["Content"] = "Empty spit is not allowed"
+	}
+	if len(content) > SPIT_MAX_CONTENT {
+		errorsMap["Content"] = fmt.Sprintf("Spit content should be less than %v characters",
+			SPIT_MAX_CONTENT)
 	}
 	return errorsMap
 }
