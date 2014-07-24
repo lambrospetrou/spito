@@ -111,6 +111,10 @@ func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 
+	// update the expiration - DEDUCT 1 just to count in the network delays
+	spit.Exp = int(spit.DateCreated.Add(time.Duration(spit.Exp)*time.Second).Unix()-
+		time.Now().UTC().Unix()) - 1
+
 	// display the Spit
 	bundle := &struct {
 		Spit   *Spit

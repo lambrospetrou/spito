@@ -99,7 +99,7 @@ func LoadSpit(id string) (*Spit, error) {
 }
 
 func NewSpit() (*Spit, error) {
-	spit := &Spit{Exp: 24 * 60, DateCreated: time.Now()}
+	spit := &Spit{Exp: 24 * 60, DateCreated: time.Now().UTC()}
 	db, err := lpdb.CDBInstance()
 	if err != nil {
 		return nil, errors.New("Could not connect to Couchbase")
