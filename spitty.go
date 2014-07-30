@@ -84,7 +84,11 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 }
 
 func apiAddHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Not implemented method", http.StatusNotImplemented)
+	if strings.ToLower(r.Method) == "post" {
+		http.Error(w, "Not implemented method", http.StatusNotImplemented)
+		return
+	}
+	http.Error(w, "Not supported method", http.StatusMethodNotAllowed)
 	return
 }
 
