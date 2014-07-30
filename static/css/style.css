@@ -5,7 +5,7 @@
 
 
 body{
-	font-family: 'Roboto', 'Open Sans', sans-serif;
+	font-family: 'Roboto', 'Lucida Sans Unicode', sans-serif;
 	font-size: 18px;
 	color: #282828;
 	line-height: 1.5;
@@ -140,7 +140,7 @@ input, textarea {
 	width: 100%;
 	padding: 5px;
 	margin-bottom: 5px;
-	font-family: 'Roboto', 'Open Sans', Arial;
+	font-family: 'Roboto', Arial;
 	outline: none;
 	border: 1px solid rgb(228, 224, 221);
 	font-size: 16px;
