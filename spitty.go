@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"regexp"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -84,43 +83,25 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
-func addHandler(w http.ResponseWriter, r *http.Request) {
-	if strings.ToLower(r.Method) == "get" {
-		renderTemplate(w, "add", nil)
-		return
-	} else if strings.ToLower(r.Method) == "post" {
-		result := struct {
-			InputExp     string
-			InputContent string
-			Errors       map[string]string
-		}{}
+func apiAddHandler(w http.ResponseWriter, r *http.Request) {
+	http.Error(w, "Not implemented method", http.StatusNotImplemented)
+	return
+}
 
-		// do the validation of the parameters
-		result.Errors = ValidateSpitParameters(r)
-
-		// if we have errors display the add page again
-		if len(result.Errors) > 0 {
-			result.InputContent = r.PostFormValue("content")
-			result.InputExp = r.PostFormValue("exp")
-			renderTemplate(w, "add", &result)
+func viewAddHandler(w http.ResponseWriter, r *http.Request) {
+	if strings.ToLower(r.Method) == "post" {
+		spit, err, validationRes := CoreAddSpit(r)
+		// it was an error during request validation
+		if validationRes != nil {
+			renderTemplate(w, "add", validationRes)
 			return
 		}
-
-		// create the new Spit since everything is fine
-		spit, err := NewSpit()
+		// check for internal error
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		spit.Exp, _ = strconv.Atoi(r.PostFormValue("exp"))
-		spit.Content = strings.TrimSpace(r.PostFormValue("content"))
-
-		// Save the spit and return the view page
-		if err = spit.Save(); err != nil {
-			http.Error(w, "Could not create your spit, go back and try again",
-				http.StatusInternalServerError)
-			return
-		}
+		// spit created successfully
 		http.Redirect(w, r, "/v/"+spit.Id, http.StatusFound)
 		return
 	} // end of POST
@@ -135,7 +116,7 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	// check if this is a POST request which means that we are adding a spit
 	// using the website form
 	if strings.ToLower(r.Method) == "post" {
-		addHandler(w, r)
+		viewAddHandler(w, r)
 		return
 	}
 
@@ -188,9 +169,9 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// API v1 add
-	http.HandleFunc("/spitty/v1/spit/add", addHandler)
+	http.HandleFunc("/spitty/v1/spits/add", apiAddHandler)
 	// API v1 delete
-	http.HandleFunc("/spitty/v1/spit/del/", makeHandler(deleteHandler))
+	http.HandleFunc("/spitty/v1/spits/del/", makeHandler(deleteHandler))
 
 	// view
 	http.HandleFunc("/v/", makeHandler(viewHandler))
