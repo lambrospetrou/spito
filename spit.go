@@ -99,6 +99,7 @@ func LoadSpit(id string) (*Spit, error) {
 }
 
 func NewSpit() (*Spit, error) {
+	// use UTC time everywhere
 	spit := &Spit{Exp: 24 * 60, DateCreated: time.Now().UTC()}
 	db, err := lpdb.CDBInstance()
 	if err != nil {

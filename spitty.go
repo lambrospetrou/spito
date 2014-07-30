@@ -46,6 +46,31 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 	}
 }
 
+func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
+	// fetch the Spit with the requested id
+	spit, err := LoadSpit(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// update the expiration - DEDUCT 1 just to count in the network delays
+	spit.Exp = int(spit.DateCreated.Add(time.Duration(spit.Exp)*time.Second).Unix()-
+		time.Now().UTC().Unix()) - 1
+
+	// display the Spit
+	bundle := &struct {
+		Spit   *Spit
+		Footer *struct{ Year int }
+		Header *struct{ Title string }
+	}{
+		Spit:   spit,
+		Footer: &struct{ Year int }{Year: time.Now().Year()},
+		Header: &struct{ Title string }{Title: spit.Id},
+	}
+	renderTemplate(w, "view", bundle)
+}
+
 func deleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 	spit, err := LoadSpit(id)
 	if err != nil {
@@ -103,34 +128,17 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
-	// fetch the Spit with the requested id
-	spit, err := LoadSpit(id)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	// update the expiration - DEDUCT 1 just to count in the network delays
-	spit.Exp = int(spit.DateCreated.Add(time.Duration(spit.Exp)*time.Second).Unix()-
-		time.Now().UTC().Unix()) - 1
-
-	// display the Spit
-	bundle := &struct {
-		Spit   *Spit
-		Footer *struct{ Year int }
-		Header *struct{ Title string }
-	}{
-		Spit:   spit,
-		Footer: &struct{ Year int }{Year: time.Now().Year()},
-		Header: &struct{ Title string }{Title: spit.Id},
-	}
-	renderTemplate(w, "view", bundle)
-}
-
 // show all posts
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Println("path: ", r.URL.Path)
+
+	// check if this is a POST request which means that we are adding a spit
+	// using the website form
+	if strings.ToLower(r.Method) == "post" {
+		addHandler(w, r)
+		return
+	}
+
 	var id string = r.URL.Path[1:]
 	if len(id) == 0 {
 		// load the index page
@@ -179,11 +187,10 @@ func main() {
 	// use all the available cores
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	// add
-	http.HandleFunc("/spitty/add", addHandler)
-
-	// delete
-	http.HandleFunc("/spitty/del/", makeHandler(deleteHandler))
+	// API v1 add
+	http.HandleFunc("/spitty/v1/spit/add", addHandler)
+	// API v1 delete
+	http.HandleFunc("/spitty/v1/spit/del/", makeHandler(deleteHandler))
 
 	// view
 	http.HandleFunc("/v/", makeHandler(viewHandler))
