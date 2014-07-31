@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 	"regexp"
@@ -168,6 +169,8 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	fmt.Println("Starting Spitty at: 40090")
 
 	// use all the available cores
 	runtime.GOMAXPROCS(runtime.NumCPU())

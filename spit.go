@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/lambrospetrou/goencoding/lpenc"
 	"github.com/lambrospetrou/spitty/lpdb"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,6 +14,10 @@ import (
 )
 
 const SPIT_MAX_CONTENT int = 10000
+
+const SPIT_ID_CHARS string = "Ca1MoKtUR5A2BfeGm8LWwlFgHOx3hNk9ciTpuqZ7nrQjXyzJbvI64V0EYPsDSd"
+
+var SpitIdEncoding = lpenc.NewEncoding(SPIT_ID_CHARS)
 
 type Spit struct {
 	IdRaw       uint64    `json:"id_raw"`
@@ -22,6 +27,7 @@ type Spit struct {
 	DateCreated time.Time `json:"date_created"`
 	IsURL       bool      `json:"is_url"`
 	Clicks      uint64    `json:"-"`
+	IsExisting  bool      `json:"-"`
 }
 
 func (spit *Spit) FormattedCreatedTime() string {
@@ -29,6 +35,20 @@ func (spit *Spit) FormattedCreatedTime() string {
 }
 
 func (spit *Spit) Save() error {
+	db, err := lpdb.CDBInstance()
+	if err != nil {
+		return errors.New("Could not get instance of Couchbase")
+	}
+
+	// make sure a valid ID exists
+	if !spit.IsExisting && spit.IdRaw == math.MaxUint64 {
+		spit_raw_id, err := nextSpitId(db)
+		if err != nil {
+			return errors.New("Could not create a unique id for the new spit")
+		}
+		spit.IdRaw = spit_raw_id
+		spit.Id = SpitIdEncoding.Encode(spit.IdRaw)
+	}
 	spit.DateCreated = time.Now()
 	if spit.Exp < 0 {
 		spit.Exp = 0
@@ -37,10 +57,6 @@ func (spit *Spit) Save() error {
 	spit.IsURL = isUrl(content)
 	if spit.IsURL {
 		spit.Content = content
-	}
-	db, err := lpdb.CDBInstance()
-	if err != nil {
-		return errors.New("Could not get instance of Couchbase")
 	}
 	jsonBytes, err := json.Marshal(spit)
 	if err != nil {
@@ -95,27 +111,31 @@ func LoadSpit(id string) (*Spit, error) {
 	if err != nil {
 		return nil, errors.New("No clicks exist for this Spit")
 	}
+	spit.IsExisting = true
 	return spit, nil
 }
 
 func NewSpit() (*Spit, error) {
 	// use UTC time everywhere
 	spit := &Spit{Exp: 24 * 60, DateCreated: time.Now().UTC()}
-	db, err := lpdb.CDBInstance()
-	if err != nil {
-		return nil, errors.New("Could not connect to Couchbase")
-	}
-	spit_raw_id, err := db.FAI("spit::count")
-	if err != nil {
-		return nil, errors.New("Could not create unique id for Spit.")
-	}
-	spit.IdRaw = spit_raw_id
-	spit.Id = lpenc.Base62Encoding.Encode(spit.IdRaw)
+	// set the ID to maximum uint64 in order to be changed by Save()
+	spit.IdRaw = math.MaxUint64
+	spit.Id = ""
+	// this is a new spit
+	spit.IsExisting = false
 	return spit, nil
 }
 
+func nextSpitId(db *lpdb.CDB) (uint64, error) {
+	raw_id, err := db.FAI("spit::count")
+	if err != nil {
+		return math.MaxUint64, errors.New("Could not create unique id for Spit.")
+	}
+	return raw_id, nil
+}
+
 func ValidateSpitID(id string) bool {
-	_, err := lpenc.Base62Encoding.Decode(id)
+	_, err := SpitIdEncoding.Decode(id)
 	return err == nil
 }
 
