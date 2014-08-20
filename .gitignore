@@ -1,4 +1,9 @@
 spitty
 ./spitty
+spito
+./spito
 RUNNING_PID
 RUNNING_ID
+
+# sublime related
+*.sublime-workspace
