@@ -47,6 +47,7 @@ func CoreAddSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 	// ignore error since it passed validation
 	spit.Exp, _ = strconv.Atoi(r.PostFormValue("exp"))
 	spit.Content = strings.TrimSpace(r.PostFormValue("content"))
+	spit.SpitType = strings.TrimSpace(r.PostFormValue("spit_type"))
 
 	// Save the spit
 	if err = spit.Save(); err != nil {
@@ -89,14 +90,15 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 		return nil, nil, result
 	}
 
+	// try to uplaod the image in amazon S3 and get the link
+	// TODO
+	////////////////////////////////////////////////////////
+
 	// create the new Spit since everything is fine
 	spit, err := NewSpit()
 	if err != nil {
 		return nil, err, nil
 	}
-
-	// try to uplaod the image in amazon S3 and get the link
-	// TODO
 
 	// ignore error since it passed validation
 	spit.Exp, _ = strconv.Atoi(values["exp"])
