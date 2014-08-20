@@ -63,10 +63,9 @@ func CoreAddSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 // returns either the Spit successfully added and saved
 // or an error if something went wrong during the creation or save of the spit
 // or a StructCoreAdd when the validation of the request arguments failed
-func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
+func CoreAddMultiSpit2(r *http.Request) (*Spit, error, *StructCoreAdd) {
 	result := &StructCoreAdd{}
 
-	// 8MB memory
 	reader, err := r.MultipartReader()
 	if err != nil {
 		result.Errors = make(map[string]string)
@@ -105,6 +104,61 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 
 		buf.Reset()
 	}
+
+	// do the validation of the parameters
+	result.Errors = ValidateSpitValues(values)
+	// if we have errors display the add page again
+	if len(result.Errors) > 0 {
+		result.InputContent = values["content"]
+		result.InputExp = values["exp"]
+		result.SpitType = values["spit_type"]
+		return nil, nil, result
+	}
+
+	// create the new Spit since everything is fine
+	spit, err := NewSpit()
+	if err != nil {
+		return nil, err, nil
+	}
+
+	// try to uplaod the image in amazon S3 and get the link
+	// TODO
+
+	// ignore error since it passed validation
+	spit.Exp, _ = strconv.Atoi(values["exp"])
+	spit.Content = strings.TrimSpace(values["content"])
+	spit.SpitType = strings.TrimSpace(values["spit_type"])
+
+	// Save the spit
+	if err = spit.Save(); err != nil {
+		err = errors.New("Could not create your spit, go back and try again")
+		return nil, err, nil
+	}
+	return spit, nil, nil
+}
+
+// does the core execution of a new media spit addition.
+// @param r: the request of the addition
+// returns either the Spit successfully added and saved
+// or an error if something went wrong during the creation or save of the spit
+// or a StructCoreAdd when the validation of the request arguments failed
+func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
+	result := &StructCoreAdd{}
+
+	r.ParseMultipartForm(1 << 23)
+
+	multiFile, multiHeader, err := r.FormFile("image")
+	if err != nil {
+		result.Errors = make(map[string]string)
+		result.Errors["image"] = "Cannot extract the image from the submitted form"
+		return nil, nil, result
+	}
+	fmt.Println(multiHeader.Filename, multiFile.Close())
+
+	var values = make(map[string]string)
+	values["exp"] = r.FormValue("exp")
+	values["content"] = r.FormValue("content")
+	values["spit_type"] = r.FormValue("spit_type")
 
 	// do the validation of the parameters
 	result.Errors = ValidateSpitValues(values)
