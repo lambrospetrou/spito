@@ -8,6 +8,7 @@ import (
 	"github.com/lambrospetrou/spitty/lpdb"
 	"math"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +20,12 @@ const SPIT_ID_CHARS string = "Ca1MoKtUR5A2BfeGm8LWwlFgHOx3hNk9ciTpuqZ7nrQjXyzJbv
 
 var SpitIdEncoding = lpenc.NewEncoding(SPIT_ID_CHARS)
 
+const (
+	SPIT_TYPE_URL   string = "url"
+	SPIT_TYPE_TEXT  string = "text"
+	SPIT_TYPE_IMAGE string = "img"
+)
+
 type Spit struct {
 	IdRaw       uint64    `json:"id_raw"`
 	Id          string    `json:"id"`
@@ -26,6 +33,7 @@ type Spit struct {
 	Content     string    `json:"content"`
 	DateCreated time.Time `json:"date_created"`
 	IsURL       bool      `json:"is_url"`
+	SpitType    string    `json:"spit_type"`
 	Clicks      uint64    `json:"-"`
 	IsExisting  bool      `json:"-"`
 }
@@ -139,11 +147,22 @@ func ValidateSpitID(id string) bool {
 	return err == nil
 }
 
-func ValidateSpitParameters(r *http.Request) map[string]string {
+func ValidateSpitRequest(r *http.Request) map[string]string {
+	return ValidateSpitParameters(r.PostFormValue("exp"),
+		r.PostFormValue("spit_type"),
+		r.PostFormValue("content"))
+}
+
+func ValidateSpitValues(values *url.Values) map[string]string {
+	return ValidateSpitParameters(values.Get("exp"),
+		values.Get("spit_type"),
+		values.Get("content"))
+}
+
+func ValidateSpitParameters(exp, spitType, content string) map[string]string {
 	errorsMap := make(map[string]string)
 	// validate the fields
 	var expInt int
-	exp := r.PostFormValue("exp")
 	if len(exp) == 0 {
 		errorsMap["Exp"] = "Cannot find expiration time"
 	} else {
@@ -156,7 +175,18 @@ func ValidateSpitParameters(r *http.Request) map[string]string {
 		}
 	}
 
-	content := strings.TrimSpace(r.PostFormValue("content"))
+	spitType = strings.TrimSpace(spitType)
+	if len(spitType) == 0 {
+		errorsMap["SpitType"] = "Empty spit type is not allowed"
+	} else {
+		if spitType != SPIT_TYPE_IMAGE &&
+			spitType != SPIT_TYPE_TEXT &&
+			spitType != SPIT_TYPE_URL {
+			errorsMap["SpitType"] = "Wrong spit type specified"
+		}
+	}
+
+	content = strings.TrimSpace(content)
 	if len(content) == 0 {
 		errorsMap["Content"] = "Empty spit is not allowed"
 	}

@@ -15,7 +15,7 @@ func isUrl(u string) bool {
 }
 
 func AbsoluteSpittyURL(id string) string {
-	return "http://lp.gs/" + id
+	return "http://spi.to/" + id
 }
 
 func ShuffleString(s string) string {

@@ -14,8 +14,7 @@ var templates = template.Must(template.ParseFiles(
 	"templates/partials/header.html",
 	"templates/partials/footer.html",
 	"templates/view.html",
-	"templates/add.html",
-	"templates/index.html"))
+	"templates/add.html"))
 
 func renderTemplate(w http.ResponseWriter, tmpl string, o interface{}) {
 	// now we can call the correct template by the basename filename
@@ -27,7 +26,7 @@ func renderTemplate(w http.ResponseWriter, tmpl string, o interface{}) {
 
 // v: view
 // d: delete
-var validPath = regexp.MustCompile("^/(v|spitty[/]del)/(.+)$")
+var validPath = regexp.MustCompile("^/(v|api[/]del)/(.+)$")
 
 // BLOG HANDLERS
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
@@ -95,7 +94,7 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 
 func viewAddHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "post" {
-		spit, err, validationRes := CoreAddSpit(r)
+		spit, err, validationRes := CoreAddMultiSpit(r)
 		// it was an error during request validation
 		if validationRes != nil {
 			renderTemplate(w, "add", validationRes)
@@ -176,9 +175,9 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// API v1 add
-	http.HandleFunc("/spitty/v1/spits/add", apiAddHandler)
+	http.HandleFunc("/api/v1/spits/add", apiAddHandler)
 	// API v1 delete
-	http.HandleFunc("/spitty/v1/spits/del/", makeHandler(deleteHandler))
+	http.HandleFunc("/api/v1/spits/del/", makeHandler(deleteHandler))
 
 	// view
 	http.HandleFunc("/v/", makeHandler(viewHandler))
