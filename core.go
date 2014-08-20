@@ -85,7 +85,7 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 
 		if part.FileName() != "" {
 			// this is a file
-
+			fmt.Println(part.FileName())
 			continue
 		}
 

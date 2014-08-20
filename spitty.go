@@ -113,6 +113,14 @@ func viewAddHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func limitSizeHandler(fn func(http.ResponseWriter, *http.Request),
+	size int64) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, size)
+		fn(w, r)
+	}
+}
+
 // show all posts
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Println("path: ", r.URL.Path)
@@ -183,7 +191,7 @@ func main() {
 	http.HandleFunc("/v/", makeHandler(viewHandler))
 
 	// if there is a parameter Spit ID call action or just go to homepage
-	http.HandleFunc("/", rootHandler)
+	http.HandleFunc("/", limitSizeHandler(rootHandler, 1<<10))
 
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
