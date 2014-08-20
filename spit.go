@@ -8,7 +8,6 @@ import (
 	"github.com/lambrospetrou/spitty/lpdb"
 	"math"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -153,10 +152,10 @@ func ValidateSpitRequest(r *http.Request) map[string]string {
 		r.PostFormValue("content"))
 }
 
-func ValidateSpitValues(values *url.Values) map[string]string {
-	return ValidateSpitParameters(values.Get("exp"),
-		values.Get("spit_type"),
-		values.Get("content"))
+func ValidateSpitValues(values map[string]string) map[string]string {
+	return ValidateSpitParameters(values["exp"],
+		values["spit_type"],
+		values["content"])
 }
 
 func ValidateSpitParameters(exp, spitType, content string) map[string]string {

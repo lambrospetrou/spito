@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 )
@@ -75,13 +74,19 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 		return nil, nil, result
 	}
 
-	var values = make(url.Values)
+	var values = make(map[string]string)
 	var buf = new(bytes.Buffer)
 	for {
 		part, err := reader.NextPart()
 		if err != nil {
 			// no other part exists
 			break
+		}
+
+		if part.FileName() != "" {
+			// this is a file
+
+			continue
 		}
 
 		// handle regular Form data
@@ -95,19 +100,19 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 			result.Errors["generic"] = "Cannot read parts of the submitted form"
 			return nil, nil, result
 		}
-		values.Add(part.FormName(), buf.String())
+		values[part.FormName()] = buf.String()
 		fmt.Println(buf.String())
 
 		buf.Reset()
 	}
 
 	// do the validation of the parameters
-	result.Errors = ValidateSpitValues(&values)
+	result.Errors = ValidateSpitValues(values)
 	// if we have errors display the add page again
 	if len(result.Errors) > 0 {
-		result.InputContent = values.Get("content")
-		result.InputExp = values.Get("exp")
-		result.SpitType = values.Get("spit_type")
+		result.InputContent = values["content"]
+		result.InputExp = values["exp"]
+		result.SpitType = values["spit_type"]
 		return nil, nil, result
 	}
 
@@ -121,9 +126,9 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 	// TODO
 
 	// ignore error since it passed validation
-	spit.Exp, _ = strconv.Atoi(values.Get("exp"))
-	spit.Content = strings.TrimSpace(values.Get("content"))
-	spit.SpitType = strings.TrimSpace(values.Get("spit_type"))
+	spit.Exp, _ = strconv.Atoi(values["exp"])
+	spit.Content = strings.TrimSpace(values["content"])
+	spit.SpitType = strings.TrimSpace(values["spit_type"])
 
 	// Save the spit
 	if err = spit.Save(); err != nil {
