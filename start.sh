@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # start the spitty executable
-./spitty 2> /home/lambros/public/lp.gs/log/stderr_lp.gs.log 1> /home/lambros/public/lp.gs/log/stdout_lp.gs.log &
+./spito 2> /home/lambros/public/spito/log/stderr_spito.log 1> /home/lambros/public/spito/log/stdout_spito.log &
 
 # log its PID for easy temrination
 echo $! > RUNNING_PID
