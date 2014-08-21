@@ -48,7 +48,7 @@ func Connect() {
 	return
 }
 
-func CDBInstance() (*CDB, error) {
+func Instance() (*CDB, error) {
 	if _This == nil {
 		Connect()
 	}

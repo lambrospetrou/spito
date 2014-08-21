@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lambrospetrou/goencoding/lpenc"
-	"github.com/lambrospetrou/spitty/lpdb"
+	"github.com/lambrospetrou/spito/lpdb"
 	"math"
 	"net/http"
 	"strconv"
@@ -42,7 +42,7 @@ func (spit *Spit) FormattedCreatedTime() string {
 }
 
 func (spit *Spit) Save() error {
-	db, err := lpdb.CDBInstance()
+	db, err := lpdb.Instance()
 	if err != nil {
 		return errors.New("Could not get instance of Couchbase")
 	}
@@ -77,7 +77,7 @@ func (spit *Spit) Save() error {
 }
 
 func (spit *Spit) Del() error {
-	db, err := lpdb.CDBInstance()
+	db, err := lpdb.Instance()
 	if err != nil {
 		return errors.New("Could not get instance of Couchbase")
 	}
@@ -89,7 +89,7 @@ func (spit *Spit) AbsoluteURL() string {
 }
 
 func (spit *Spit) ClickInc() error {
-	db, err := lpdb.CDBInstance()
+	db, err := lpdb.Instance()
 	if err != nil {
 		return errors.New("Could not connect to Couchbase")
 	}
@@ -106,7 +106,7 @@ func (spit *Spit) ClickInc() error {
 
 func LoadSpit(id string) (*Spit, error) {
 	spit := &Spit{}
-	db, err := lpdb.CDBInstance()
+	db, err := lpdb.Instance()
 	if err != nil {
 		return nil, errors.New("Could not connect to Couchbase")
 	}
