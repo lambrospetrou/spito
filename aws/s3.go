@@ -6,6 +6,7 @@ import (
 	"launchpad.net/goamz/aws"
 	"launchpad.net/goamz/s3"
 	"log"
+	"sync"
 )
 
 const (
@@ -19,10 +20,12 @@ type S3Struct struct {
 }
 
 // singleton since it will not be visible outside this package
+var _This_lock sync.Once
 var _This *S3Struct
 var err error
 
 func connect() {
+	fmt.Println("connect() called")
 	auth := aws.Auth{
 		AccessKey: _AWS_ACCESS_KEY,
 		SecretKey: _AWS_SECRET_KEY,
@@ -35,9 +38,9 @@ func connect() {
 }
 
 func Instance() (*S3Struct, error) {
-	if _This == nil {
+	_This_lock.Do(func() {
 		connect()
-	}
+	})
 	return _This, err
 }
 
