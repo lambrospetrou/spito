@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/couchbase/gomemcached"
 	"github.com/couchbaselabs/go-couchbase"
+	"sync"
 )
 
 const (
@@ -20,10 +21,11 @@ type CDB struct {
 }
 
 // singleton since it will not be visible outside this package
+var _This_lock sync.Once
 var _This *CDB
 var err error
 
-func Connect() {
+func connect() {
 	fmt.Println("Starting connection to Couchbase")
 	_This = new(CDB)
 	_This.client, err = couchbase.Connect(_COUCHBASE_URL)
@@ -49,9 +51,9 @@ func Connect() {
 }
 
 func Instance() (*CDB, error) {
-	if _This == nil {
-		Connect()
-	}
+	_This_lock.Do(func() {
+		connect()
+	})
 	return _This, err
 }
 
