@@ -75,7 +75,7 @@ func main() {
 
 	img, err := ioutil.ReadFile("img.jpg")
 	if err != nil {
-		panic("testign image doe snot exist")
+		panic("testign image does not exist")
 	}
 	UploadImage("_public/testing_image.jpg", img, "image/jpeg")
 }

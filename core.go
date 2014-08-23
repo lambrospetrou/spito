@@ -3,9 +3,14 @@ package main
 import (
 	"errors"
 	"fmt"
+	"image"
 	"net/http"
 	"strconv"
 	"strings"
+)
+
+const (
+	MAX_FORM_SIZE int64 = 1 << 23
 )
 
 // the struct that is passed in the Add handlers
@@ -65,15 +70,13 @@ func CoreAddSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 	result := &StructCoreAdd{}
 
-	//r.ParseMultipartForm(1 << 23)
-
-	multiFile, multiHeader, err := r.FormFile("image")
+	// try to parse the form with a maximum size
+	err := r.ParseMultipartForm(MAX_FORM_SIZE)
 	if err != nil {
 		result.Errors = make(map[string]string)
-		result.Errors["image"] = "Cannot extract the image from the submitted form"
+		result.Errors["Generic"] = "Too much data submitted. Try with a smaller image. (up to 8MB)"
 		return nil, nil, result
 	}
-	fmt.Println(multiHeader.Filename, multiFile.Close())
 
 	var values = make(map[string]string)
 	values["exp"] = r.FormValue("exp")
@@ -90,8 +93,21 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 		return nil, nil, result
 	}
 
-	// try to uplaod the image in amazon S3 and get the link
-	// TODO
+	// extract the image if this is an image spit
+	if values["spit_type"] == SPIT_TYPE_IMAGE {
+		// decode the image posted and check if there is a problem
+		img, format, err := ParseAndDecodeImage(r)
+		if err != nil {
+			result.Errors = make(map[string]string)
+			result.Errors["Image"] = err.Error()
+			return nil, nil, result
+		}
+		fmt.Println("format: ", format, " : ", img.Bounds())
+
+		// try to uplaod the image in amazon S3 and get the link
+		// TODO
+	}
+
 	////////////////////////////////////////////////////////
 
 	// create the new Spit since everything is fine
@@ -107,8 +123,24 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 
 	// Save the spit
 	if err = spit.Save(); err != nil {
-		err = errors.New("Could not create your spit, go back and try again")
+		err = errors.New("Could not save your spit, go back and try again")
 		return nil, err, nil
 	}
 	return spit, nil, nil
+}
+
+func ParseAndDecodeImage(r *http.Request) (image.Image, string, error) {
+	//multiFile, multiHeader, err := r.FormFile("image")
+	multiFile, _, err := r.FormFile("image")
+	if err != nil {
+		return nil, "", errors.New("Cannot extract the image from the submitted form")
+	}
+	//fmt.Println(multiHeader.Filename, multiFile.Close())
+
+	// decode the image posted and check if there is a problem
+	img, format, err := DecodeImage(multiFile)
+	if err != nil {
+		return nil, "unknown", errors.New("You submitted an Invalid image")
+	}
+	return img, format, nil
 }

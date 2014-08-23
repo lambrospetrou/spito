@@ -26,12 +26,19 @@
     </label>
 	<input id="exp" name="exp" type="number" step="1" min="0" value="3600" required/>
 
+    <label for="image">select your image (.png .jpg, .gif)
+        {{ with . }}
+            {{ with .Errors }}{{ with .Image }}
+                <span class="form-error">{{ .}}</span>
+            {{ end }}{{ end }}
+        {{ end }}
+    </label>
     <input id="image" name="image" type="file"/>
 
-    <input id="spit_type" name="spit_type" value="text" type="hidden"/>
+    <input id="spit_type" name="spit_type" value="img" type="hidden"/>
 	<div>
 		<p>
-			<input type="submit" value="Spit it">
+			<input type="submit" value="spit it">
 		</p>
 	</div>
 </form>

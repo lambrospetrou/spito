@@ -95,6 +95,7 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 func viewAddHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "post" {
 		spit, err, validationRes := CoreAddMultiSpit(r)
+
 		// it was an error during request validation
 		if validationRes != nil {
 			renderTemplate(w, "add", validationRes)
@@ -191,7 +192,7 @@ func main() {
 	http.HandleFunc("/v/", makeHandler(viewHandler))
 
 	// if there is a parameter Spit ID call action or just go to homepage
-	http.HandleFunc("/", limitSizeHandler(rootHandler, 1<<10))
+	http.HandleFunc("/", limitSizeHandler(rootHandler, MAX_FORM_SIZE))
 
 	fs := http.FileServer(http.Dir("static"))
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
