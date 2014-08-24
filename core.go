@@ -3,10 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/lambrospetrou/spito/s3"
 	"image"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -105,7 +108,24 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 		fmt.Println("format: ", format, " : ", img.Bounds())
 
 		// try to uplaod the image in amazon S3 and get the link
-		// TODO
+		exp, _ := strconv.Atoi(values["exp"])
+		filePath, err := AWSUploadImage(r, img, format)
+		if err != nil {
+			result.Errors = make(map[string]string)
+			result.Errors["Generic"] = err.Error()
+			return nil, nil, result
+		}
+		fmt.Println("filePath: ", filePath)
+
+		urlS, err := AWSSignedURL(filePath, exp)
+		if err != nil {
+			result.Errors = make(map[string]string)
+			result.Errors["Generic"] = err.Error()
+			return nil, nil, result
+		}
+		fmt.Println("urlSigned: ", urlS)
+
+		values["aws_image_url"] = urlS
 	}
 
 	////////////////////////////////////////////////////////
@@ -143,4 +163,49 @@ func ParseAndDecodeImage(r *http.Request) (image.Image, string, error) {
 		return nil, "unknown", errors.New("You submitted an Invalid image")
 	}
 	return img, format, nil
+}
+
+// uploads the image from the request.
+// tries to extract the image from the parameter 'image'
+// and it is assumed to be a multipart form
+// returns the filePath where the image is stored on AWS S3 and if an error occured
+func AWSUploadImage(r *http.Request, img image.Image, format string) (string, error) {
+	multiFile, multiHeader, err := r.FormFile("image")
+	if err != nil {
+		return "", errors.New("Cannot extract the image from the submitted form")
+	}
+	fmt.Println(multiHeader.Filename, multiHeader.Header)
+
+	b, err := ioutil.ReadAll(multiFile)
+	if err != nil {
+		return "", errors.New("Cannot read the image from the submitted form")
+	}
+
+	s3struct, err := s3.Instance()
+	if err != nil {
+		return "", errors.New("Cannot get Amazon S3 instance")
+	}
+	filePath := "_signed/" + multiHeader.Filename
+	s, err := s3struct.UploadImage(filePath, b, "image/"+format)
+	if err != nil {
+		return "", errors.New("Cannot store image")
+	}
+	fmt.Println(s, err)
+	return filePath, nil
+}
+
+// tries to generate a signed URL for the filePath specified that expires
+// after the specfied exp time has passed from now.
+func AWSSignedURL(filePath string, exp int) (string, error) {
+	s3struct, err := s3.Instance()
+	if err != nil {
+		return "", errors.New("Cannot get Amazon S3 instance")
+	}
+	expTime := time.Now().Add(time.Duration(exp) * time.Second)
+	urlS := s3struct.SignedURL(filePath, expTime)
+	if r := recover(); r != nil {
+		return "", errors.New("Cannot create a URL for the image")
+	}
+
+	return urlS, nil
 }
