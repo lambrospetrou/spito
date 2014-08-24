@@ -28,7 +28,6 @@ var _This *S3Struct
 var err error
 
 func connect() {
-	fmt.Println("connect() called")
 	auth := aws.Auth{
 		AccessKey: _AWS_ACCESS_KEY,
 		SecretKey: _AWS_SECRET_KEY,
@@ -50,7 +49,6 @@ func Instance() (*S3Struct, error) {
 func (mS3 *S3Struct) UploadImage(fileName string, img []byte, mimeType string) (string, error) {
 	err := mS3.Bucket.Put(fileName, img, mimeType, s3.BucketOwnerFull)
 	if err != nil {
-		fmt.Println("error", err)
 		return "", err
 	}
 	return "Uploaded", nil
@@ -59,7 +57,6 @@ func (mS3 *S3Struct) UploadImage(fileName string, img []byte, mimeType string) (
 func (mS3 *S3Struct) UploadImageByReader(fileName string, img io.Reader, length int64, mimeType string) (string, error) {
 	err := mS3.Bucket.PutReader(fileName, img, length, mimeType, s3.BucketOwnerFull)
 	if err != nil {
-		fmt.Println("error", err)
 		return "", err
 	}
 	return "uploaded: " + fileName, nil

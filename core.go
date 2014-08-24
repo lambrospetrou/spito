@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lambrospetrou/spito/s3"
+	"github.com/lambrospetrou/spito/spit"
 	"image"
 	"io/ioutil"
 	"net/http"
@@ -34,11 +35,11 @@ type StructCoreAdd struct {
 // returns either the Spit successfully added and saved
 // or an error if something went wrong during the creation or save of the spit
 // or a StructCoreAdd when the validation of the request arguments failed
-func CoreAddSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
+func CoreAddSpit(r *http.Request) (*spit.Spit, error, *StructCoreAdd) {
 	result := &StructCoreAdd{}
 
 	// do the validation of the parameters
-	result.Errors = ValidateSpitRequest(r)
+	result.Errors = spit.ValidateSpitRequest(r)
 	// if we have errors display the add page again
 	if len(result.Errors) > 0 {
 		result.InputContent = r.PostFormValue("content")
@@ -48,21 +49,21 @@ func CoreAddSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 	}
 
 	// create the new Spit since everything is fine
-	spit, err := NewSpit()
+	s, err := spit.New()
 	if err != nil {
 		return nil, err, nil
 	}
 	// ignore error since it passed validation
-	spit.Exp, _ = strconv.Atoi(r.PostFormValue("exp"))
-	spit.Content = strings.TrimSpace(r.PostFormValue("content"))
-	spit.SpitType = strings.TrimSpace(r.PostFormValue("spit_type"))
+	s.Exp, _ = strconv.Atoi(r.PostFormValue("exp"))
+	s.Content = strings.TrimSpace(r.PostFormValue("content"))
+	s.SpitType = strings.TrimSpace(r.PostFormValue("spit_type"))
 
 	// Save the spit
-	if err = spit.Save(); err != nil {
+	if err = s.Save(); err != nil {
 		err = errors.New("Could not create your spit, go back and try again")
 		return nil, err, nil
 	}
-	return spit, nil, nil
+	return s, nil, nil
 }
 
 // does the core execution of a new media spit addition.
@@ -70,7 +71,7 @@ func CoreAddSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 // returns either the Spit successfully added and saved
 // or an error if something went wrong during the creation or save of the spit
 // or a StructCoreAdd when the validation of the request arguments failed
-func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
+func CoreAddMultiSpit(r *http.Request) (*spit.Spit, error, *StructCoreAdd) {
 	result := &StructCoreAdd{}
 
 	// try to parse the form with a maximum size
@@ -87,7 +88,7 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 	values["spit_type"] = r.FormValue("spit_type")
 
 	// do the validation of the parameters
-	result.Errors = ValidateSpitValues(values)
+	result.Errors = spit.ValidateSpitValues(values)
 	// if we have errors display the add page again
 	if len(result.Errors) > 0 {
 		result.InputContent = values["content"]
@@ -97,7 +98,7 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 	}
 
 	// extract the image if this is an image spit
-	if values["spit_type"] == SPIT_TYPE_IMAGE {
+	if values["spit_type"] == spit.SPIT_TYPE_IMAGE {
 		// decode the image posted and check if there is a problem
 		img, format, err := ParseAndDecodeImage(r)
 		if err != nil {
@@ -131,22 +132,22 @@ func CoreAddMultiSpit(r *http.Request) (*Spit, error, *StructCoreAdd) {
 	////////////////////////////////////////////////////////
 
 	// create the new Spit since everything is fine
-	spit, err := NewSpit()
+	s, err := spit.New()
 	if err != nil {
 		return nil, err, nil
 	}
 
 	// ignore error since it passed validation
-	spit.Exp, _ = strconv.Atoi(values["exp"])
-	spit.Content = strings.TrimSpace(values["content"])
-	spit.SpitType = strings.TrimSpace(values["spit_type"])
+	s.Exp, _ = strconv.Atoi(values["exp"])
+	s.Content = strings.TrimSpace(values["content"])
+	s.SpitType = strings.TrimSpace(values["spit_type"])
 
 	// Save the spit
-	if err = spit.Save(); err != nil {
+	if err = s.Save(); err != nil {
 		err = errors.New("Could not save your spit, go back and try again")
 		return nil, err, nil
 	}
-	return spit, nil, nil
+	return s, nil, nil
 }
 
 func ParseAndDecodeImage(r *http.Request) (image.Image, string, error) {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/lambrospetrou/spito/spit"
 	"html/template"
 	"net/http"
 	"regexp"
@@ -37,7 +38,7 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 			http.NotFound(w, r)
 			return
 		}
-		if !ValidateSpitID(m[2]) {
+		if !spit.ValidateSpitID(m[2]) {
 			http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
 			return
 		}
@@ -47,36 +48,36 @@ func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.Handl
 
 func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	// fetch the Spit with the requested id
-	spit, err := LoadSpit(id)
+	s, err := spit.Load(id)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
 	// update the expiration - DEDUCT 1 just to count in the network delays
-	spit.Exp = int(spit.DateCreated.Add(time.Duration(spit.Exp)*time.Second).Unix()-
+	s.Exp = int(s.DateCreated.Add(time.Duration(s.Exp)*time.Second).Unix()-
 		time.Now().UTC().Unix()) - 1
 
 	// display the Spit
 	bundle := &struct {
-		Spit   *Spit
+		Spit   *spit.Spit
 		Footer *struct{ Year int }
 		Header *struct{ Title string }
 	}{
-		Spit:   spit,
+		Spit:   s,
 		Footer: &struct{ Year int }{Year: time.Now().Year()},
-		Header: &struct{ Title string }{Title: spit.Id},
+		Header: &struct{ Title string }{Title: s.Id},
 	}
 	renderTemplate(w, "view", bundle)
 }
 
 func deleteHandler(w http.ResponseWriter, r *http.Request, id string) {
-	spit, err := LoadSpit(id)
+	s, err := spit.Load(id)
 	if err != nil {
 		http.Error(w, "Could not find the Spit specified!", http.StatusBadRequest)
 		return
 	}
-	if err = spit.Del(); err != nil {
+	if err = s.Del(); err != nil {
 		http.Error(w, "Could not delete the spit specified!", http.StatusBadRequest)
 		return
 	}
@@ -141,34 +142,34 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// make sure there is a valid Spit ID
-	if !ValidateSpitID(id) {
+	if !spit.ValidateSpitID(id) {
 		http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
 		return
 	}
 
 	// fetch the Spit with the requested id
-	spit, err := LoadSpit(id)
+	s, err := spit.Load(id)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
 
 	// update clicks
-	err = spit.ClickInc()
+	err = s.ClickInc()
 	if err != nil {
 		http.Error(w, "Could not update analytics for Spit", http.StatusInternalServerError)
 		return
 	}
 
 	// check if this Spit is a URL that we should redirect to
-	if spit.IsURL {
+	if s.IsURL {
 		// HTTP 1.1.
 		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 		// HTTP 1.0.
 		w.Header().Set("Pragma", "no-cache")
 		// Proxies
 		w.Header().Set("Expires", "0")
-		http.Redirect(w, r, spit.Content, http.StatusMovedPermanently)
+		http.Redirect(w, r, s.Content, http.StatusMovedPermanently)
 		return
 	}
 	// this is a text Spit so display it
