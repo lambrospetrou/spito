@@ -202,6 +202,19 @@ func (spit *Spit) ClickInc() error {
 ////////////////// GENERAL FUNCTIONS
 /////////////////////////////////////////////////////
 
+func nextSpitId(db *lpdb.CDB) (uint64, error) {
+	raw_id, err := db.FAI("spit::count")
+	if err != nil {
+		return math.MaxUint64, errors.New("Could not create unique id for Spit.")
+	}
+	return raw_id, nil
+}
+
+func ValidateSpitID(id string) bool {
+	_, err := SpitIdEncoding.Decode(id)
+	return err == nil
+}
+
 func Load(id string) (ISpit, error) {
 
 	// TODO - determine type quickly without marshalling into any specific type
@@ -243,43 +256,87 @@ func New() (ISpit, error) {
 //      the spit if everything parsed successfully
 //      an error if something went wrong
 //      a map[string]string containing any errors occured validating the parameters
-/*
-func NewFromRequest(r *http.Request) (*ISpit, error, map[string]string) {
-	var reqErrors map[string]string
+func ParseSpitRequest(r *http.Request) (ISpit, map[string]string) {
+	exp := r.FormValue("exp")
+	spitType := r.FormValue("spit_type")
+	content := r.FormValue("content")
 
-	// do the validation of the parameters
-	reqErrors = ValidateSpitRequest(r)
-	// if we have errors display the add page again
-	if len(result.Errors) > 0 {
-		return nil, errors.New("Request has invalid spit parameters"), reqErrors
+	errorsMap := make(map[string]string)
+
+	// extract spit type from request
+	spitType = strings.TrimSpace(spitType)
+	if len(spitType) == 0 {
+		errorsMap["SpitType"] = "Empty spit type is not allowed"
+	} else {
+		if spitType != SPIT_TYPE_IMAGE &&
+			spitType != SPIT_TYPE_TEXT &&
+			spitType != SPIT_TYPE_URL {
+			errorsMap["SpitType"] = "Wrong spit type specified"
+		}
 	}
 
+	// validate the expiration
+	var expInt int
+	if len(exp) == 0 {
+		errorsMap["Exp"] = "Cannot find expiration time"
+	} else {
+		_, err := strconv.Atoi(exp)
+		if err != nil {
+			errorsMap["Exp"] = "Invalid expiration time posted"
+		}
+		if expInt < 0 {
+			errorsMap["Exp"] = "Negative expiration time not allowed"
+		}
+	}
+
+	// make sure we are fine so far - MIDDLE CHECK
+	if len(errorsMap) > 0 {
+		return nil, errorsMap
+	}
 	// create the new Spit since everything is fine
 	nSpit, err := New()
 	if err != nil {
-		return nil, err, nil
+		errorsMap["Generic"] = "Could not create a new spit"
+		return nil, errorsMap
 	}
+	nSpit.SetSpitType(spitType)
+	nSpit.SetExp(expInt)
 
-	// ignore error since it passed validation
-	nSpit.Exp, _ = strconv.Atoi(r.FormValue["exp"])
-	nSpit.Content = strings.TrimSpace(r.FormValue["content"])
-	nSpit.SpitType = strings.TrimSpace(r.FormValue["spit_type"])
+	// extract the image if this is an image spit
+	if spitType == SPIT_TYPE_IMAGE {
+		// decode the image posted and check if there is a problem
+		img, format, err := parseAndDecodeImage(r)
+		if err != nil {
+			errorsMap["Image"] = err.Error()
+			return nil, errorsMap
+		} else {
+			fmt.Println("image format: ", format, " : ", img.Bounds())
+		}
 
-	return s
-}
-*/
+		// TODO
+		// TODO ---------
+		// TODO
 
-func nextSpitId(db *lpdb.CDB) (uint64, error) {
-	raw_id, err := db.FAI("spit::count")
-	if err != nil {
-		return math.MaxUint64, errors.New("Could not create unique id for Spit.")
-	}
-	return raw_id, nil
-}
+	} else if spitType == SPIT_TYPE_TEXT || spitType == SPIT_TYPE_URL {
+		// TEXT AND URL SPITS
 
-func ValidateSpitID(id string) bool {
-	_, err := SpitIdEncoding.Decode(id)
-	return err == nil
+		content = strings.TrimSpace(content)
+		if len(content) == 0 {
+			errorsMap["Content"] = "Empty spit is not allowed"
+			return nil, errorsMap
+		}
+		if len(content) > SPIT_MAX_CONTENT {
+			errorsMap["Content"] = fmt.Sprintf("Spit content should be less than %v characters",
+				SPIT_MAX_CONTENT)
+			return nil, errorsMap
+		}
+		nSpit.SetContent(content)
+
+	} // end of spit type checking
+
+	// TODO --------------
+	// TODO --------------
+	return nSpit, errorsMap
 }
 
 func ValidateSpitRequest(r *http.Request) map[string]string {
@@ -320,9 +377,8 @@ func ValidateSpitRequest(r *http.Request) map[string]string {
 		if err != nil {
 			errorsMap["Image"] = err.Error()
 		} else {
-			fmt.Println("IMAGE format: ", format, " : ", img.Bounds())
+			fmt.Println("image format: ", format, " : ", img.Bounds())
 		}
-
 	} else if spitType == SPIT_TYPE_TEXT || spitType == SPIT_TYPE_URL {
 		// TEXT AND URL SPITS
 		content = strings.TrimSpace(content)
