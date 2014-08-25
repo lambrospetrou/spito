@@ -30,48 +30,12 @@ type StructCoreAdd struct {
 	SpitType     string
 }
 
-// does the core execution of a new spit addition.
-// @param r: the request of the addition
-// returns either the Spit successfully added and saved
-// or an error if something went wrong during the creation or save of the spit
-// or a StructCoreAdd when the validation of the request arguments failed
-func CoreAddSpit(r *http.Request) (*spit.Spit, error, *StructCoreAdd) {
-	result := &StructCoreAdd{}
-
-	// do the validation of the parameters
-	result.Errors = spit.ValidateSpitRequest(r)
-	// if we have errors display the add page again
-	if len(result.Errors) > 0 {
-		result.InputContent = r.PostFormValue("content")
-		result.InputExp = r.PostFormValue("exp")
-		result.SpitType = r.PostFormValue("spit_type")
-		return nil, nil, result
-	}
-
-	// create the new Spit since everything is fine
-	s, err := spit.New()
-	if err != nil {
-		return nil, err, nil
-	}
-	// ignore error since it passed validation
-	s.Exp, _ = strconv.Atoi(r.PostFormValue("exp"))
-	s.Content = strings.TrimSpace(r.PostFormValue("content"))
-	s.SpitType = strings.TrimSpace(r.PostFormValue("spit_type"))
-
-	// Save the spit
-	if err = s.Save(); err != nil {
-		err = errors.New("Could not create your spit, go back and try again")
-		return nil, err, nil
-	}
-	return s, nil, nil
-}
-
 // does the core execution of a new media spit addition.
 // @param r: the request of the addition
 // returns either the Spit successfully added and saved
 // or an error if something went wrong during the creation or save of the spit
 // or a StructCoreAdd when the validation of the request arguments failed
-func CoreAddMultiSpit(r *http.Request) (*spit.Spit, error, *StructCoreAdd) {
+func CoreAddMultiSpit(r *http.Request) (spit.ISpit, error, *StructCoreAdd) {
 	result := &StructCoreAdd{}
 
 	// try to parse the form with a maximum size
@@ -88,7 +52,7 @@ func CoreAddMultiSpit(r *http.Request) (*spit.Spit, error, *StructCoreAdd) {
 	values["spit_type"] = r.FormValue("spit_type")
 
 	// do the validation of the parameters
-	result.Errors = spit.ValidateSpitValues(values)
+	result.Errors = spit.ValidateSpitRequest(r)
 	// if we have errors display the add page again
 	if len(result.Errors) > 0 {
 		result.InputContent = values["content"]
@@ -138,9 +102,12 @@ func CoreAddMultiSpit(r *http.Request) (*spit.Spit, error, *StructCoreAdd) {
 	}
 
 	// ignore error since it passed validation
-	s.Exp, _ = strconv.Atoi(values["exp"])
-	s.Content = strings.TrimSpace(values["content"])
-	s.SpitType = strings.TrimSpace(values["spit_type"])
+	exp, _ := strconv.Atoi(values["exp"])
+	s.SetExp(exp)
+	content := strings.TrimSpace(values["content"])
+	s.SetContent(content)
+	spitType := strings.TrimSpace(values["spit_type"])
+	s.SetSpitType(spitType)
 
 	// Save the spit
 	if err = s.Save(); err != nil {

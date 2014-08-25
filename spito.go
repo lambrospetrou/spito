@@ -55,18 +55,18 @@ func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	}
 
 	// update the expiration - DEDUCT 1 just to count in the network delays
-	s.Exp = int(s.DateCreated.Add(time.Duration(s.Exp)*time.Second).Unix()-
-		time.Now().UTC().Unix()) - 1
+	s.SetExp(int(s.DateCreated().Add(time.Duration(s.Exp())*time.Second).Unix()-
+		time.Now().UTC().Unix()) - 1)
 
 	// display the Spit
 	bundle := &struct {
-		Spit   *spit.Spit
+		Spit   *spit.ISpit
 		Footer *struct{ Year int }
 		Header *struct{ Title string }
 	}{
-		Spit:   s,
+		Spit:   &s,
 		Footer: &struct{ Year int }{Year: time.Now().Year()},
-		Header: &struct{ Title string }{Title: s.Id},
+		Header: &struct{ Title string }{Title: s.Id()},
 	}
 	renderTemplate(w, "view", bundle)
 }
@@ -95,7 +95,7 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 
 func viewAddHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "post" {
-		spit, err, validationRes := CoreAddMultiSpit(r)
+		s, err, validationRes := CoreAddMultiSpit(r)
 
 		// it was an error during request validation
 		if validationRes != nil {
@@ -108,7 +108,7 @@ func viewAddHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		// spit created successfully
-		http.Redirect(w, r, "/v/"+spit.Id, http.StatusFound)
+		http.Redirect(w, r, "/v/"+s.Id(), http.StatusFound)
 		return
 	} // end of POST
 	http.Error(w, "Not supported method", http.StatusMethodNotAllowed)
@@ -162,14 +162,14 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if this Spit is a URL that we should redirect to
-	if s.IsURL {
+	if s.IsURL() {
 		// HTTP 1.1.
 		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 		// HTTP 1.0.
 		w.Header().Set("Pragma", "no-cache")
 		// Proxies
 		w.Header().Set("Expires", "0")
-		http.Redirect(w, r, s.Content, http.StatusMovedPermanently)
+		http.Redirect(w, r, s.Content(), http.StatusMovedPermanently)
 		return
 	}
 	// this is a text Spit so display it
