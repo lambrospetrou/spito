@@ -8,8 +8,6 @@ import (
 	"image"
 	"io/ioutil"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -30,6 +28,7 @@ type StructCoreAdd struct {
 	SpitType     string
 }
 
+/*
 // does the core execution of a new media spit addition.
 // @param r: the request of the addition
 // returns either the Spit successfully added and saved
@@ -115,6 +114,70 @@ func CoreAddMultiSpit(r *http.Request) (spit.ISpit, error, *StructCoreAdd) {
 		return nil, err, nil
 	}
 	return s, nil, nil
+}
+*/
+
+// does the core execution of a new media spit addition.
+// @param r: the request of the addition
+// returns either the Spit successfully added and saved
+// or an error if something went wrong during the creation or save of the spit
+// or a StructCoreAdd when the validation of the request arguments failed
+func CoreAddMultiSpit(r *http.Request) (spit.ISpit, error, *StructCoreAdd) {
+	result := &StructCoreAdd{}
+
+	// try to parse the form with a maximum size
+	err := r.ParseMultipartForm(MAX_FORM_SIZE)
+	if err != nil {
+		result.Errors = make(map[string]string)
+		result.Errors["Generic"] = "Too much data submitted. Try with a smaller image. (up to 8MB)"
+		return nil, nil, result
+	}
+
+	// parse the request and try to create a spit
+	nSpit, errorMaps := spit.NewFromRequest(r)
+	if errorMaps != nil && len(errorMaps) > 0 {
+		result.Errors = errorMaps
+		return nil, nil, result
+	}
+
+	// extract the image if this is an image spit
+	if nSpit.SpitType() == spit.SPIT_TYPE_IMAGE {
+
+		// decode the image posted and check if there is a problem
+		img, format, err := ParseAndDecodeImage(r)
+		if err != nil {
+			result.Errors = make(map[string]string)
+			result.Errors["Image"] = err.Error()
+			return nil, nil, result
+		}
+		fmt.Println("format: ", format, " : ", img.Bounds())
+
+		// try to uplaod the image in amazon S3 and get the link
+		filePath, err := AWSUploadImage(r, img, format)
+		if err != nil {
+			result.Errors = make(map[string]string)
+			result.Errors["Generic"] = err.Error()
+			return nil, nil, result
+		}
+		fmt.Println("filePath: ", filePath)
+
+		urlS, err := AWSSignedURL(filePath, nSpit.Exp())
+		if err != nil {
+			result.Errors = make(map[string]string)
+			result.Errors["Generic"] = err.Error()
+			return nil, nil, result
+		}
+		fmt.Println("urlSigned: ", urlS)
+	}
+
+	////////////////////////////////////////////////////////
+
+	// Save the spit
+	if err = nSpit.Save(); err != nil {
+		err = errors.New("Could not save your spit, go back and try again")
+		return nil, err, nil
+	}
+	return nSpit, nil, nil
 }
 
 func ParseAndDecodeImage(r *http.Request) (image.Image, string, error) {

@@ -163,6 +163,9 @@ func (spit *Spit) Save() error {
 	if spit.IsURL_ {
 		spit.Content_ = content
 	}
+
+	//fmt.Println("saving: ", spit.Exp_, spit.Content_, spit.SpitType_)
+
 	jsonBytes, err := json.Marshal(spit)
 	if err != nil {
 		return errors.New("Could not convert Spit to JSON format!")
@@ -256,7 +259,7 @@ func New() (ISpit, error) {
 //      the spit if everything parsed successfully
 //      an error if something went wrong
 //      a map[string]string containing any errors occured validating the parameters
-func ParseSpitRequest(r *http.Request) (ISpit, map[string]string) {
+func NewFromRequest(r *http.Request) (ISpit, map[string]string) {
 	exp := r.FormValue("exp")
 	spitType := r.FormValue("spit_type")
 	content := r.FormValue("content")
@@ -268,8 +271,7 @@ func ParseSpitRequest(r *http.Request) (ISpit, map[string]string) {
 	if len(spitType) == 0 {
 		errorsMap["SpitType"] = "Empty spit type is not allowed"
 	} else {
-		if spitType != SPIT_TYPE_IMAGE &&
-			spitType != SPIT_TYPE_TEXT &&
+		if spitType != SPIT_TYPE_IMAGE && spitType != SPIT_TYPE_TEXT &&
 			spitType != SPIT_TYPE_URL {
 			errorsMap["SpitType"] = "Wrong spit type specified"
 		}
@@ -277,10 +279,11 @@ func ParseSpitRequest(r *http.Request) (ISpit, map[string]string) {
 
 	// validate the expiration
 	var expInt int
+	var err error
 	if len(exp) == 0 {
 		errorsMap["Exp"] = "Cannot find expiration time"
 	} else {
-		_, err := strconv.Atoi(exp)
+		expInt, err = strconv.Atoi(exp)
 		if err != nil {
 			errorsMap["Exp"] = "Invalid expiration time posted"
 		}
@@ -335,7 +338,7 @@ func ParseSpitRequest(r *http.Request) (ISpit, map[string]string) {
 	} // end of spit type checking
 
 	// TODO --------------
-	// TODO --------------
+	// TODO - maybe return nil instead of empty error map
 	return nSpit, errorsMap
 }
 
