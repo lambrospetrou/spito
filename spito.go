@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/lambrospetrou/spito/spit"
 	"html/template"
+	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"runtime"
 	"strings"
@@ -87,43 +87,45 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 
 func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "post" {
-		s, err, validationRes := CoreAddMultiSpit(r)
+		s, err := CoreAddMultiSpit(r)
 
-		// it was an error during request validation
-		if validationRes != nil {
-			b, e := json.Marshal(validationRes)
-			if e != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			w.WriteHeader(http.StatusBadRequest)
-			if _, e = w.Write(b); e != nil {
-				// TODO - what should I do when a write fails
-				fmt.Fprintln(os.Stderr, e.Error())
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			return
-		}
-		// check for internal error
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			if _, ok := err.(*ErrCoreAdd); ok {
+				// it was an error during request validation
+				validationRes := err.(*ErrCoreAdd)
+				b, e := json.Marshal(validationRes)
+				if e != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write(b)
+				return
+			} else if _, ok := err.(*ErrCoreAddDB); ok {
+				errDB := err.(*ErrCoreAddDB)
+				log.Printf("apiAddHandler::Internal error: %v", errDB)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			} else {
+				// other internal error
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				log.Fatalf("apiAddHandler::Unknown Error: %v", err)
+				return
+
+			}
 		}
 
 		// we are good to go - spit added successfully
-		b, e := json.Marshal(s)
-		if e != nil {
+		b, err := json.Marshal(s)
+		if err != nil {
+			log.Printf("apiAddHandler::Internal error while marshalling spit: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
-		if _, e = w.Write(b); e != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		w.Write(b)
 		return
 	}
 	http.Error(w, "Not supported method", http.StatusMethodNotAllowed)
@@ -132,18 +134,28 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 
 func viewAddHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "post" {
-		s, err, validationRes := CoreAddMultiSpit(r)
+		s, err := CoreAddMultiSpit(r)
 
-		// it was an error during request validation
-		if validationRes != nil {
-			renderTemplate(w, "add", validationRes)
-			return
-		}
-		// check for internal error
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			if _, ok := err.(*ErrCoreAdd); ok {
+				// it was an error during request validation
+				validationRes := err.(*ErrCoreAdd)
+				renderTemplate(w, "add", validationRes)
+				return
+			} else if _, ok := err.(*ErrCoreAddDB); ok {
+				errDB := err.(*ErrCoreAddDB)
+				log.Printf("viewAddHandler::Internal error: %v", errDB)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			} else {
+				// other internal error
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				log.Fatalf("viewAddHandler::Unknown Error: %v", err)
+				return
+
+			}
 		}
+
 		// spit created successfully
 		http.Redirect(w, r, "/v/"+s.Id(), http.StatusFound)
 		return

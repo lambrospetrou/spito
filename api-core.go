@@ -22,27 +22,40 @@ const (
 // InputContent: is the value of the content in request
 // Errors: is a map containing errors with keys 'exp' & 'content'.
 // 			Keys only exist if there is an error with them.
-type StructCoreAdd struct {
+type ErrCoreAdd struct {
 	InputExp     string
 	InputContent string
 	Errors       map[string]string
 	SpitType     string
 }
 
+func (e *ErrCoreAdd) Error() string {
+	return fmt.Sprintf("ErrCoreAdd: %v", e.Errors)
+}
+
+type ErrCoreAddDB struct {
+	NewSpit spit.ISpit
+	Message string
+}
+
+func (e *ErrCoreAddDB) Error() string {
+	return fmt.Sprintf("ErrCoreAddDB: %v\nSpit: %v", e.Message, e.NewSpit)
+}
+
 // does the core execution of a new media spit addition.
 // @param r: the request of the addition
 // returns either the Spit successfully added and saved
-// or an error if something went wrong during the creation or save of the spit
-// or a StructCoreAdd when the validation of the request arguments failed
-func CoreAddMultiSpit(r *http.Request) (spit.ISpit, error, *StructCoreAdd) {
-	result := &StructCoreAdd{}
+// or an error ErrCoreAddDB if something went wrong during the creation or save of the spit
+// or an error ErrCoreAdd when the validation of the request arguments failed
+func CoreAddMultiSpit(r *http.Request) (spit.ISpit, error) {
+	result := &ErrCoreAdd{}
 
 	// try to parse the form with a maximum size
 	err := r.ParseMultipartForm(MAX_FORM_SIZE)
 	if err != nil {
 		result.Errors = make(map[string]string)
-		result.Errors["Generic"] = "Too much data submitted. Try with a smaller image. (up to 8MB)"
-		return nil, nil, result
+		result.Errors["Generic"] = "Too much data submitted (up to 8MB) or invalid form data!"
+		return nil, result
 	}
 
 	// parse the request and try to create a spit
@@ -51,19 +64,20 @@ func CoreAddMultiSpit(r *http.Request) (spit.ISpit, error, *StructCoreAdd) {
 		if _, ok := err.(*spit.SpitError); ok {
 			spitErr := err.(*spit.SpitError)
 			result.Errors = spitErr.ErrorsMap
-			return nil, nil, result
+			return nil, result
 		} else {
 			log.Fatal(err.Error())
-			return nil, err, nil
+			return nil, err
 		}
 	}
 
 	// Save the spit
 	if err = nSpit.Save(); err != nil {
-		err = errors.New("Could not save your spit, go back and try again")
-		return nil, err, nil
+		errDB := &ErrCoreAddDB{NewSpit: nSpit, Message: "Could not save spit in database!"}
+		log.Printf("%s, %v", err.Error(), errDB)
+		return nil, errDB
 	}
-	return nSpit, nil, nil
+	return nSpit, nil
 }
 
 func ParseAndDecodeImage(r *http.Request) (image.Image, string, error) {

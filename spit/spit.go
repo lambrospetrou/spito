@@ -265,17 +265,17 @@ type SpitError struct {
 }
 
 func (e *SpitError) Error() string {
-	return fmt.Sprintf("v", e.ErrorsMap)
+	return fmt.Sprintf("SpitError: %v", e.ErrorsMap)
 }
 
 // tries to extract data from the request and map them to a newly created Spit.
 // it reads the spit_type in order to determine what spit type will return.
 // if there is an error with the parameters then a map of the errors with
-// the key being the parameter is returned.
+// the key being the parameter is returned inside the SpitError.
 // Return
 //      the spit if everything parsed successfully
-//      an error if something went wrong
-//      a map[string]string containing any errors occured validating the parameters
+//      a SpitError if something went wrong that contains a map[string]string
+//			containing any errors occured validating the parameters
 func NewFromRequest(r *http.Request) (ISpit, error) {
 	exp := r.FormValue("exp")
 	spitType := r.FormValue("spit_type")
@@ -332,9 +332,7 @@ func NewFromRequest(r *http.Request) (ISpit, error) {
 			fmt.Println("image format: ", format, " : ", img.Bounds())
 		}
 
-		// TODO
 		// TODO ---------
-		// TODO
 
 	} else if spitType == SPIT_TYPE_TEXT || spitType == SPIT_TYPE_URL {
 		// TEXT AND URL SPITS
@@ -353,64 +351,7 @@ func NewFromRequest(r *http.Request) (ISpit, error) {
 
 	} // end of spit type checking
 
-	// TODO --------------
-	// TODO - maybe return nil instead of empty error map
 	return nSpit, nil
-}
-
-func ValidateSpitRequest(r *http.Request) map[string]string {
-	exp := r.FormValue("exp")
-	spitType := r.FormValue("spit_type")
-	content := r.FormValue("content")
-
-	errorsMap := make(map[string]string)
-	// validate the fields
-	var expInt int
-	if len(exp) == 0 {
-		errorsMap["Exp"] = "Cannot find expiration time"
-	} else {
-		_, err := strconv.Atoi(exp)
-		if err != nil {
-			errorsMap["Exp"] = "Invalid expiration time posted"
-		}
-		if expInt < 0 {
-			errorsMap["Exp"] = "Negative expiration time not allowed"
-		}
-	}
-
-	spitType = strings.TrimSpace(spitType)
-	if len(spitType) == 0 {
-		errorsMap["SpitType"] = "Empty spit type is not allowed"
-	} else {
-		if spitType != SPIT_TYPE_IMAGE &&
-			spitType != SPIT_TYPE_TEXT &&
-			spitType != SPIT_TYPE_URL {
-			errorsMap["SpitType"] = "Wrong spit type specified"
-		}
-	}
-
-	// extract the image if this is an image spit
-	if spitType == SPIT_TYPE_IMAGE {
-		// decode the image posted and check if there is a problem
-		img, format, err := parseAndDecodeImage(r)
-		if err != nil {
-			errorsMap["Image"] = err.Error()
-		} else {
-			fmt.Println("image format: ", format, " : ", img.Bounds())
-		}
-	} else if spitType == SPIT_TYPE_TEXT || spitType == SPIT_TYPE_URL {
-		// TEXT AND URL SPITS
-		content = strings.TrimSpace(content)
-		if len(content) == 0 {
-			errorsMap["Content"] = "Empty spit is not allowed"
-		}
-		if len(content) > SPIT_MAX_CONTENT {
-			errorsMap["Content"] = fmt.Sprintf("Spit content should be less than %v characters",
-				SPIT_MAX_CONTENT)
-		}
-	}
-
-	return errorsMap
 }
 
 func parseAndDecodeImage(r *http.Request) (image.Image, string, error) {
@@ -428,62 +369,4 @@ func parseAndDecodeImage(r *http.Request) (image.Image, string, error) {
 		return nil, "unknown", errors.New("You submitted an Invalid image")
 	}
 	return img, format, nil
-}
-
-func ValidateSpitValues(values map[string]string) map[string]string {
-	return ValidateSpitParameters(values["exp"],
-		values["spit_type"],
-		values["content"])
-}
-
-func ValidateSpitParameters(exp, spitType, content string) map[string]string {
-	errorsMap := make(map[string]string)
-	// validate the fields
-	var expInt int
-	if len(exp) == 0 {
-		errorsMap["Exp"] = "Cannot find expiration time"
-	} else {
-		_, err := strconv.Atoi(exp)
-		if err != nil {
-			errorsMap["Exp"] = "Invalid expiration time posted"
-		}
-		if expInt < 0 {
-			errorsMap["Exp"] = "Negative expiration time not allowed"
-		}
-	}
-
-	spitType = strings.TrimSpace(spitType)
-	if len(spitType) == 0 {
-		errorsMap["SpitType"] = "Empty spit type is not allowed"
-	} else {
-		if spitType != SPIT_TYPE_IMAGE &&
-			spitType != SPIT_TYPE_TEXT &&
-			spitType != SPIT_TYPE_URL {
-			errorsMap["SpitType"] = "Wrong spit type specified"
-		}
-	}
-
-	// extract the image if this is an image spit
-	if spitType == SPIT_TYPE_IMAGE {
-		// decode the image posted and check if there is a problem
-		/*
-			img, format, err := ParseAndDecodeImage(r)
-			if err != nil {
-				errorsMap["Image"] = err.Error()
-			}
-			fmt.Println("IMAGE format: ", format, " : ", img.Bounds())
-		*/
-	} else if spitType == SPIT_TYPE_TEXT || spitType == SPIT_TYPE_URL {
-		// TEXT AND URL SPITS
-		content = strings.TrimSpace(content)
-		if len(content) == 0 {
-			errorsMap["Content"] = "Empty spit is not allowed"
-		}
-		if len(content) > SPIT_MAX_CONTENT {
-			errorsMap["Content"] = fmt.Sprintf("Spit content should be less than %v characters",
-				SPIT_MAX_CONTENT)
-		}
-	}
-
-	return errorsMap
 }
