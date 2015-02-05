@@ -23,10 +23,7 @@ const (
 // Errors: is a map containing errors with keys 'exp' & 'content'.
 // 			Keys only exist if there is an error with them.
 type ErrCoreAdd struct {
-	InputExp     string
-	InputContent string
-	Errors       map[string]string
-	SpitType     string
+	Errors map[string]string
 }
 
 func (e *ErrCoreAdd) Error() string {
