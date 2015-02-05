@@ -51,38 +51,6 @@ func CoreAddMultiSpit(r *http.Request) (spit.ISpit, error, *StructCoreAdd) {
 		return nil, nil, result
 	}
 
-	// extract the image if this is an image spit
-	if nSpit.SpitType() == spit.SPIT_TYPE_IMAGE {
-
-		// decode the image posted and check if there is a problem
-		img, format, err := ParseAndDecodeImage(r)
-		if err != nil {
-			result.Errors = make(map[string]string)
-			result.Errors["Image"] = err.Error()
-			return nil, nil, result
-		}
-		fmt.Println("format: ", format, " : ", img.Bounds())
-
-		// try to uplaod the image in amazon S3 and get the link
-		filePath, err := AWSUploadImage(r, img, format)
-		if err != nil {
-			result.Errors = make(map[string]string)
-			result.Errors["Generic"] = err.Error()
-			return nil, nil, result
-		}
-		fmt.Println("filePath: ", filePath)
-
-		urlS, err := AWSSignedURL(filePath, nSpit.Exp())
-		if err != nil {
-			result.Errors = make(map[string]string)
-			result.Errors["Generic"] = err.Error()
-			return nil, nil, result
-		}
-		fmt.Println("urlSigned: ", urlS)
-	}
-
-	////////////////////////////////////////////////////////
-
 	// Save the spit
 	if err = nSpit.Save(); err != nil {
 		err = errors.New("Could not save your spit, go back and try again")
