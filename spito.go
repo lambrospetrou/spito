@@ -85,6 +85,21 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 	http.Redirect(w, r, "/", http.StatusFound)
 }
 
+type APIAddResultError struct {
+	Errors []string `json:"errors"`
+}
+
+type APIAddResult struct {
+	Id                   string    `json:"id"`
+	Exp                  int       `json:"expiration"`
+	Content              string    `json:"content"`
+	SpitType             string    `json:"spit_type"`
+	DateCreated          time.Time `json:"date_created"`
+	FormattedCreatedTime string    `json:"date_created_fmt"`
+	IsURL                bool      `json:"is_url"`
+	AbsoluteURL          string    `json:"absolute_url"`
+}
+
 func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "post" {
 		s, err := CoreAddMultiSpit(r)
@@ -93,7 +108,14 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 			if _, ok := err.(*ErrCoreAdd); ok {
 				// it was an error during request validation
 				validationRes := err.(*ErrCoreAdd)
-				b, e := json.Marshal(validationRes)
+				errorList := make([]string, 0)
+				for _, v := range validationRes.Errors {
+					if len(strings.TrimSpace(v)) > 0 {
+						errorList = append(errorList, v)
+					}
+				}
+				result := &APIAddResultError{Errors: errorList}
+				b, e := json.Marshal(result)
 				if e != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
 					return
@@ -117,7 +139,12 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// we are good to go - spit added successfully
-		b, err := json.Marshal(s)
+		result := &APIAddResult{
+			Id: s.Id(), Exp: s.Exp(), Content: s.Content(), SpitType: s.SpitType(),
+			DateCreated: s.DateCreated(), FormattedCreatedTime: s.FormattedCreatedTime(),
+			IsURL: s.IsURL(), AbsoluteURL: s.AbsoluteURL(),
+		}
+		b, err := json.Marshal(result)
 		if err != nil {
 			log.Printf("apiAddHandler::Internal error while marshalling spit: %v", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
