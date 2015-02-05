@@ -8,7 +8,6 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"regexp"
 	"runtime"
 	"strings"
 	"time"
@@ -28,61 +27,7 @@ func renderTemplate(w http.ResponseWriter, tmpl string, o interface{}) {
 	}
 }
 
-// v: view
-// d: delete
-var validPath = regexp.MustCompile("^/(v|api[/]del|api[/]v1[/]spits)/(.+)$")
-
-func requireSpitIDHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		// test for general format
-		m := validPath.FindStringSubmatch(r.URL.Path)
-		if m == nil {
-			http.NotFound(w, r)
-			return
-		}
-		if !spit.ValidateSpitID(m[2]) {
-			http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
-			return
-		}
-		fn(w, r, m[2])
-	}
-}
-
-func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
-	// fetch the Spit with the requested id
-	s, err := spit.Load(id)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	// display the Spit
-	bundle := &struct {
-		Spit   *spit.ISpit
-		Footer *struct{ Year int }
-		Header *struct{ Title string }
-	}{
-		Spit:   &s,
-		Footer: &struct{ Year int }{Year: time.Now().Year()},
-		Header: &struct{ Title string }{Title: s.Id()},
-	}
-	renderTemplate(w, "view", bundle)
-}
-
-func deleteHandler(w http.ResponseWriter, r *http.Request, id string) {
-	s, err := spit.Load(id)
-	if err != nil {
-		http.Error(w, "Could not find the Spit specified!", http.StatusBadRequest)
-		return
-	}
-	if err = s.Del(); err != nil {
-		http.Error(w, "Could not delete the spit specified!", http.StatusBadRequest)
-		return
-	}
-	http.Redirect(w, r, "/", http.StatusFound)
-}
-
-type APIAddResultError struct {
+type APIResultError struct {
 	Errors []string `json:"errors"`
 }
 
@@ -95,6 +40,24 @@ type APIAddResult struct {
 	FormattedCreatedTime string    `json:"date_created_fmt"`
 	IsURL                bool      `json:"is_url"`
 	AbsoluteURL          string    `json:"absolute_url"`
+
+	Message string `json: "message"`
+}
+
+type APIDeleteResult struct {
+	Message string `json: "message"`
+}
+
+func requireSpitIDHttpRouter(fn func(http.ResponseWriter, *http.Request, string)) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		// test for general format
+		id := ps.ByName("id")
+		if !spit.ValidateSpitID(id) {
+			http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
+			return
+		}
+		fn(w, r, id)
+	}
 }
 
 func httpRouterNoParams(h http.Handler) httprouter.Handle {
@@ -102,6 +65,41 @@ func httpRouterNoParams(h http.Handler) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		h.ServeHTTP(w, r)
 	}
+}
+
+func webDeleteHandler(w http.ResponseWriter, r *http.Request, id string) {
+	s, err := spit.Load(id)
+	if err != nil {
+		http.Error(w, "Could not find the Spit specified!", http.StatusBadRequest)
+		return
+	}
+	if err = s.Del(); err != nil {
+		http.Error(w, "Could not delete the spit specified!", http.StatusBadRequest)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusFound)
+}
+
+func apiDeleteHandler(w http.ResponseWriter, r *http.Request, id string) {
+	s, err := spit.Load(id)
+	if err != nil {
+		http.Error(w, "Could not find the Spit specified!", http.StatusBadRequest)
+		return
+	}
+	if err = s.Del(); err != nil {
+		http.Error(w, "Could not delete the spit specified!", http.StatusBadRequest)
+		return
+	}
+	result := &APIDeleteResult{Message: "Successfully deleted Spit: " + s.Id()}
+	b, e := json.Marshal(result)
+	if e != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
+	return
 }
 
 func apiAddHandler(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +116,7 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 						errorList = append(errorList, v)
 					}
 				}
-				result := &APIAddResultError{Errors: errorList}
+				result := &APIResultError{Errors: errorList}
 				b, e := json.Marshal(result)
 				if e != nil {
 					http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -146,7 +144,7 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 		result := &APIAddResult{
 			Id: s.Id(), Exp: s.Exp(), Content: s.Content(), SpitType: s.SpitType(),
 			DateCreated: s.DateCreated(), FormattedCreatedTime: s.FormattedCreatedTime(),
-			IsURL: s.IsURL(), AbsoluteURL: s.AbsoluteURL(),
+			IsURL: s.IsURL(), AbsoluteURL: s.AbsoluteURL(), Message: "Successfully added new Spit!",
 		}
 		b, err := json.Marshal(result)
 		if err != nil {
@@ -163,45 +161,7 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func requireSpitIDHttpRouter(fn func(http.ResponseWriter, *http.Request, string)) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		// test for general format
-		id := ps.ByName("id")
-		if !spit.ValidateSpitID(id) {
-			http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
-			return
-		}
-		fn(w, r, id)
-	}
-}
-
-func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
-	// fetch the Spit with the requested id
-	s, err := spit.Load(id)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	// we are good to go - spit fetched successfully
-	result := &APIAddResult{
-		Id: s.Id(), Exp: s.Exp(), Content: s.Content(), SpitType: s.SpitType(),
-		DateCreated: s.DateCreated(), FormattedCreatedTime: s.FormattedCreatedTime(),
-		IsURL: s.IsURL(), AbsoluteURL: s.AbsoluteURL(),
-	}
-	b, err := json.Marshal(result)
-	if err != nil {
-		log.Printf("apiViewHandler::Internal error while marshalling spit: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(b)
-	return
-}
-
-func viewAddHandler(w http.ResponseWriter, r *http.Request) {
+func webAddHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "post" {
 		s, err := CoreAddMultiSpit(r)
 
@@ -233,6 +193,53 @@ func viewAddHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
+	// fetch the Spit with the requested id
+	s, err := spit.Load(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// we are good to go - spit fetched successfully
+	result := &APIAddResult{
+		Id: s.Id(), Exp: s.Exp(), Content: s.Content(), SpitType: s.SpitType(),
+		DateCreated: s.DateCreated(), FormattedCreatedTime: s.FormattedCreatedTime(),
+		IsURL: s.IsURL(), AbsoluteURL: s.AbsoluteURL(), Message: "Successfully fetched Spit!",
+	}
+	b, err := json.Marshal(result)
+	if err != nil {
+		log.Printf("apiViewHandler::Internal error while marshalling spit: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
+	return
+}
+
+func webViewHandler(w http.ResponseWriter, r *http.Request, id string) {
+	// fetch the Spit with the requested id
+	s, err := spit.Load(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// display the Spit
+	bundle := &struct {
+		Spit   *spit.ISpit
+		Footer *struct{ Year int }
+		Header *struct{ Title string }
+	}{
+		Spit:   &s,
+		Footer: &struct{ Year int }{Year: time.Now().Year()},
+		Header: &struct{ Title string }{Title: s.Id()},
+	}
+	renderTemplate(w, "view", bundle)
+}
+
 func limitSizeHandler(fn func(http.ResponseWriter, *http.Request),
 	size int64) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -244,13 +251,6 @@ func limitSizeHandler(fn func(http.ResponseWriter, *http.Request),
 // show all posts
 func rootHandler(w http.ResponseWriter, r *http.Request) {
 	//fmt.Println("path: ", r.URL.Path)
-
-	// check if this is a POST request which means that we are adding a spit
-	// using the website form
-	if strings.ToLower(r.Method) == "post" {
-		viewAddHandler(w, r)
-		return
-	}
 
 	var id string = r.URL.Path[1:]
 	if len(id) == 0 {
@@ -295,10 +295,6 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
-}
-
 func main() {
 
 	fmt.Println("Starting Spito at: 40090")
@@ -315,24 +311,19 @@ func main() {
 	router.POST("/api/v1/spits", httpRouterNoParams(limitSizeHandler(apiAddHandler, MAX_FORM_SIZE)))
 	router.GET("/api/v1/spits/:id", requireSpitIDHttpRouter(apiViewHandler))
 
-	// add a new spit
-	//http.HandleFunc("/api/v1/spits", limitSizeHandler(apiAddHandler, MAX_FORM_SIZE))
-	//http.HandleFunc("/api/v1/spits/", requireSpitIDHandler(apiViewHandler))
+	router.POST("/api/v1-web/spits/:id/delete", requireSpitIDHttpRouter(webDeleteHandler))
+	router.DELETE("/api/v1/spits/:id", requireSpitIDHttpRouter(apiDeleteHandler))
 
 	/////////////////
 	// VIEW ROUTERS
 	/////////////////
 
-	//http.HandleFunc("/v/", requireSpitIDHandler(viewHandler))
-	router.GET("/v/:id", requireSpitIDHttpRouter(viewHandler))
+	router.GET("/v/:id", requireSpitIDHttpRouter(webViewHandler))
 
-	//http.HandleFunc("/", limitSizeHandler(rootHandler, MAX_FORM_SIZE))
-	router.POST("/", httpRouterNoParams(limitSizeHandler(viewAddHandler, MAX_FORM_SIZE)))
+	router.POST("/", httpRouterNoParams(limitSizeHandler(webAddHandler, MAX_FORM_SIZE)))
 	router.GET("/", httpRouterNoParams(limitSizeHandler(rootHandler, MAX_FORM_SIZE)))
 
 	router.ServeFiles("/static/*filepath", http.Dir("static"))
-	//fs := http.FileServer(http.Dir("static"))
-	//http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	//http.ListenAndServe(":40090", nil)
 	http.ListenAndServe(":40090", router)
