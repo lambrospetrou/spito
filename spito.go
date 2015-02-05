@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/julienschmidt/httprouter"
 	"github.com/lambrospetrou/spito/spit"
 	"html/template"
 	"log"
@@ -29,7 +30,7 @@ func renderTemplate(w http.ResponseWriter, tmpl string, o interface{}) {
 
 // v: view
 // d: delete
-var validPath = regexp.MustCompile("^/(v|api[/]del)/(.+)$")
+var validPath = regexp.MustCompile("^/(v|api[/]del|api[/]v1[/]spits)/(.+)$")
 
 func requireSpitIDHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -96,6 +97,13 @@ type APIAddResult struct {
 	AbsoluteURL          string    `json:"absolute_url"`
 }
 
+func httpRouterNoParams(h http.Handler) httprouter.Handle {
+	//func httpRouterNoParams(func(http.ResponseWriter, *http.Request) fn) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		h.ServeHTTP(w, r)
+	}
+}
+
 func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "post" {
 		s, err := CoreAddMultiSpit(r)
@@ -152,6 +160,44 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Error(w, "Not supported method", http.StatusMethodNotAllowed)
+	return
+}
+
+func requireSpitIDHttpRouter(fn func(http.ResponseWriter, *http.Request, string)) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		// test for general format
+		id := ps.ByName("id")
+		if !spit.ValidateSpitID(id) {
+			http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
+			return
+		}
+		fn(w, r, id)
+	}
+}
+
+func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
+	// fetch the Spit with the requested id
+	s, err := spit.Load(id)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+
+	// we are good to go - spit fetched successfully
+	result := &APIAddResult{
+		Id: s.Id(), Exp: s.Exp(), Content: s.Content(), SpitType: s.SpitType(),
+		DateCreated: s.DateCreated(), FormattedCreatedTime: s.FormattedCreatedTime(),
+		IsURL: s.IsURL(), AbsoluteURL: s.AbsoluteURL(),
+	}
+	b, err := json.Marshal(result)
+	if err != nil {
+		log.Printf("apiViewHandler::Internal error while marshalling spit: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
 	return
 }
 
@@ -249,6 +295,10 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+func Hello(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
+}
+
 func main() {
 
 	fmt.Println("Starting Spito at: 40090")
@@ -256,12 +306,17 @@ func main() {
 	// use all the available cores
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
+	router := httprouter.New()
+	router.POST("/api/v1/spits", httpRouterNoParams(limitSizeHandler(apiAddHandler, MAX_FORM_SIZE)))
+	router.GET("/api/v1/spits/:id", requireSpitIDHttpRouter(apiViewHandler))
+
 	/////////////////
 	// API ROUTERS
 	/////////////////
 
 	// add a new spit
 	http.HandleFunc("/api/v1/spits", limitSizeHandler(apiAddHandler, MAX_FORM_SIZE))
+	http.HandleFunc("/api/v1/spits/", requireSpitIDHandler(apiViewHandler))
 
 	/////////////////
 	// VIEW ROUTERS
@@ -276,6 +331,7 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	http.ListenAndServe(":40090", nil)
+	//http.ListenAndServe(":40090", router)
 }
 
 //////////////////////// HELPERS ////////////////////
