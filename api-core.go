@@ -7,6 +7,7 @@ import (
 	"github.com/lambrospetrou/spito/spit"
 	"image"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"time"
 )
@@ -45,10 +46,16 @@ func CoreAddMultiSpit(r *http.Request) (spit.ISpit, error, *StructCoreAdd) {
 	}
 
 	// parse the request and try to create a spit
-	nSpit, errorMaps := spit.NewFromRequest(r)
-	if errorMaps != nil && len(errorMaps) > 0 {
-		result.Errors = errorMaps
-		return nil, nil, result
+	nSpit, err := spit.NewFromRequest(r)
+	if err != nil {
+		if _, ok := err.(*spit.SpitError); ok {
+			spitErr := err.(*spit.SpitError)
+			result.Errors = spitErr.ErrorsMap
+			return nil, nil, result
+		} else {
+			log.Fatal(err.Error())
+			return nil, err, nil
+		}
 	}
 
 	// Save the spit

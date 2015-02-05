@@ -260,6 +260,14 @@ func New() (ISpit, error) {
 	return spit, nil
 }
 
+type SpitError struct {
+	ErrorsMap map[string]string
+}
+
+func (e *SpitError) Error() string {
+	return fmt.Sprintf("v", e.ErrorsMap)
+}
+
 // tries to extract data from the request and map them to a newly created Spit.
 // it reads the spit_type in order to determine what spit type will return.
 // if there is an error with the parameters then a map of the errors with
@@ -268,20 +276,20 @@ func New() (ISpit, error) {
 //      the spit if everything parsed successfully
 //      an error if something went wrong
 //      a map[string]string containing any errors occured validating the parameters
-func NewFromRequest(r *http.Request) (ISpit, map[string]string) {
+func NewFromRequest(r *http.Request) (ISpit, error) {
 	exp := r.FormValue("exp")
 	spitType := r.FormValue("spit_type")
 	content := r.FormValue("content")
 
-	errorsMap := make(map[string]string)
+	spitError := &SpitError{make(map[string]string)}
 
 	// extract spit type from request
 	spitType = strings.TrimSpace(spitType)
 	if len(spitType) == 0 {
-		errorsMap["SpitType"] = "Empty spit type is not allowed"
+		spitError.ErrorsMap["SpitType"] = "Empty spit type is not allowed"
 	} else {
 		if !ActiveSpitTypes[spitType] {
-			errorsMap["SpitType"] = "Invalid spit type specified"
+			spitError.ErrorsMap["SpitType"] = "Invalid spit type specified"
 		}
 	}
 
@@ -289,26 +297,26 @@ func NewFromRequest(r *http.Request) (ISpit, map[string]string) {
 	var expInt int
 	var err error
 	if len(exp) == 0 {
-		errorsMap["Exp"] = "Cannot find expiration time"
+		spitError.ErrorsMap["Exp"] = "Cannot find expiration time"
 	} else {
 		expInt, err = strconv.Atoi(exp)
 		if err != nil {
-			errorsMap["Exp"] = "Invalid expiration time posted"
+			spitError.ErrorsMap["Exp"] = "Invalid expiration time posted"
 		}
 		if expInt < 0 {
-			errorsMap["Exp"] = "Negative expiration time not allowed"
+			spitError.ErrorsMap["Exp"] = "Negative expiration time not allowed"
 		}
 	}
 
 	// make sure we are fine so far - MIDDLE CHECK
-	if len(errorsMap) > 0 {
-		return nil, errorsMap
+	if len(spitError.ErrorsMap) > 0 {
+		return nil, spitError
 	}
 	// create the new Spit since everything is fine
 	nSpit, err := New()
 	if err != nil {
-		errorsMap["Generic"] = "Could not create a new spit"
-		return nil, errorsMap
+		spitError.ErrorsMap["Generic"] = "Could not create a new spit"
+		return nil, spitError
 	}
 	nSpit.SetSpitType(spitType)
 	nSpit.SetExp(expInt)
@@ -318,8 +326,8 @@ func NewFromRequest(r *http.Request) (ISpit, map[string]string) {
 		// decode the image posted and check if there is a problem
 		img, format, err := parseAndDecodeImage(r)
 		if err != nil {
-			errorsMap["Image"] = err.Error()
-			return nil, errorsMap
+			spitError.ErrorsMap["Image"] = err.Error()
+			return nil, spitError
 		} else {
 			fmt.Println("image format: ", format, " : ", img.Bounds())
 		}
@@ -333,13 +341,13 @@ func NewFromRequest(r *http.Request) (ISpit, map[string]string) {
 
 		content = strings.TrimSpace(content)
 		if len(content) == 0 {
-			errorsMap["Content"] = "Empty spit is not allowed"
-			return nil, errorsMap
+			spitError.ErrorsMap["Content"] = "Empty spit is not allowed"
+			return nil, spitError
 		}
 		if len(content) > SPIT_MAX_CONTENT {
-			errorsMap["Content"] = fmt.Sprintf("Spit content should be less than %v characters",
+			spitError.ErrorsMap["Content"] = fmt.Sprintf("Spit content should be less than %v characters",
 				SPIT_MAX_CONTENT)
-			return nil, errorsMap
+			return nil, spitError
 		}
 		nSpit.SetContent(content)
 
@@ -347,7 +355,7 @@ func NewFromRequest(r *http.Request) (ISpit, map[string]string) {
 
 	// TODO --------------
 	// TODO - maybe return nil instead of empty error map
-	return nSpit, errorsMap
+	return nSpit, nil
 }
 
 func ValidateSpitRequest(r *http.Request) map[string]string {
