@@ -14,8 +14,8 @@ func IsUrl(u string) bool {
 	return err == nil
 }
 
-func AbsoluteSpitoURL(id string) string {
-	return "http://spi.to/" + id
+func AbsoluteSpitoURL(subUrl string) string {
+	return "http://spi.to/" + subUrl
 }
 
 func ShuffleString(s string) string {

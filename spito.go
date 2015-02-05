@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/lambrospetrou/spito/spit"
 	"html/template"
 	"net/http"
+	"os"
 	"regexp"
 	"runtime"
 	"strings"
@@ -29,7 +31,6 @@ func renderTemplate(w http.ResponseWriter, tmpl string, o interface{}) {
 // d: delete
 var validPath = regexp.MustCompile("^/(v|api[/]del)/(.+)$")
 
-// BLOG HANDLERS
 func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// test for general format
@@ -86,7 +87,43 @@ func deleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 
 func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "post" {
-		http.Error(w, "Not implemented method", http.StatusNotImplemented)
+		s, err, validationRes := CoreAddMultiSpit(r)
+
+		// it was an error during request validation
+		if validationRes != nil {
+			b, e := json.Marshal(validationRes)
+			if e != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			w.WriteHeader(http.StatusBadRequest)
+			if _, e = w.Write(b); e != nil {
+				// TODO - what should I do when a write fails
+				fmt.Fprintln(os.Stderr, e.Error())
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			return
+		}
+		// check for internal error
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// we are good to go - spit added successfully
+		b, e := json.Marshal(s)
+		if e != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		if _, e = w.Write(b); e != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		return
 	}
 	http.Error(w, "Not supported method", http.StatusMethodNotAllowed)
@@ -179,13 +216,14 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	fmt.Println("Starting Spitty at: 40090")
+	fmt.Println("Starting Spito at: 40090")
 
 	// use all the available cores
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// API v1 add
-	http.HandleFunc("/api/v1/spits/add", apiAddHandler)
+	http.HandleFunc("/api/v1-browser/spits/add", apiAddHandler)
+	http.HandleFunc("/api/v1/spits", apiAddHandler)
 	// API v1 delete
 	http.HandleFunc("/api/v1/spits/del/", makeHandler(deleteHandler))
 

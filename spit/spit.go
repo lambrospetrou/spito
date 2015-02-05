@@ -27,14 +27,21 @@ const (
 	SPIT_TYPE_IMAGE string = "img"
 )
 
+var ActiveSpitTypes map[string]bool = map[string]bool{
+	SPIT_TYPE_URL:  true,
+	SPIT_TYPE_TEXT: true,
+}
+
 type Spit struct {
 	IdRaw_       uint64    `json:"id_raw"`
 	Id_          string    `json:"id"`
 	Exp_         int       `json:"exp"`
 	Content_     string    `json:"content"`
 	DateCreated_ time.Time `json:"date_created"`
-	IsURL_       bool      `json:"is_url"`
 	SpitType_    string    `json:"spit_type"`
+
+	// maybe remove this and just use the method to check the spit type
+	IsURL_ bool `json:"is_url"`
 
 	Clicks_     uint64 `json:"-"`
 	IsExisting_ bool   `json:"-"`
@@ -63,8 +70,10 @@ type ISpit interface {
 	SetContent(string) string
 	SetSpitType(string) string
 
+	// make the following two FUNCTIONS of the spit package and not METHODS of spit objects
 	FormattedCreatedTime() string
 	AbsoluteURL() string
+
 	Clicks() uint64
 	IsExisting() bool
 
@@ -271,9 +280,8 @@ func NewFromRequest(r *http.Request) (ISpit, map[string]string) {
 	if len(spitType) == 0 {
 		errorsMap["SpitType"] = "Empty spit type is not allowed"
 	} else {
-		if spitType != SPIT_TYPE_IMAGE && spitType != SPIT_TYPE_TEXT &&
-			spitType != SPIT_TYPE_URL {
-			errorsMap["SpitType"] = "Wrong spit type specified"
+		if !ActiveSpitTypes[spitType] {
+			errorsMap["SpitType"] = "Invalid spit type specified"
 		}
 	}
 
