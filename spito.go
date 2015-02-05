@@ -334,7 +334,7 @@ func main() {
 	router.Post("/api/v1/spits", limitSizeHandler(apiAddHandler, MAX_FORM_SIZE))
 
 	router.Delete("/api/v1/spits/{id}", requireSpitID(apiDeleteHandler))
-	router.Post("/api/v1-web/spits/{id}/delete", requireSpitID(webDeleteHandler))
+	router.Post("/api/v1-web/spits/{id}/delete", limitSizeHandler(requireSpitID(webDeleteHandler), MAX_FORM_SIZE))
 
 	/////////////////
 	// VIEW ROUTERS
