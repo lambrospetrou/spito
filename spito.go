@@ -66,6 +66,12 @@ func httpRouterNoParams(h http.Handler) httprouter.Handle {
 		h.ServeHTTP(w, r)
 	}
 }
+func httpRouterNoParamsFn(fn func(http.ResponseWriter, *http.Request)) httprouter.Handle {
+	//func httpRouterNoParams(func(http.ResponseWriter, *http.Request) fn) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		fn(w, r)
+	}
+}
 
 func webDeleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 	s, err := spit.Load(id)
@@ -258,7 +264,11 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 		renderTemplate(w, "add", nil)
 		return
 	}
+	// make sure there is a valid Spit ID
+	webRedirectHandler(w, r, id)
+}
 
+func webRedirectHandler(w http.ResponseWriter, r *http.Request, id string) {
 	// make sure there is a valid Spit ID
 	if !spit.ValidateSpitID(id) {
 		http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
@@ -304,6 +314,9 @@ func main() {
 
 	router := httprouter.New()
 
+	router.GET("/", httpRouterNoParams(limitSizeHandler(rootHandler, MAX_FORM_SIZE)))
+	//router.GET("/:id", requireSpitIDHttpRouter(webRedirectHandler))
+
 	/////////////////
 	// API ROUTERS
 	/////////////////
@@ -311,8 +324,8 @@ func main() {
 	router.POST("/api/v1/spits", httpRouterNoParams(limitSizeHandler(apiAddHandler, MAX_FORM_SIZE)))
 	router.GET("/api/v1/spits/:id", requireSpitIDHttpRouter(apiViewHandler))
 
-	router.POST("/api/v1-web/spits/:id/delete", requireSpitIDHttpRouter(webDeleteHandler))
 	router.DELETE("/api/v1/spits/:id", requireSpitIDHttpRouter(apiDeleteHandler))
+	router.POST("/api/v1-web/spits/:id/delete", requireSpitIDHttpRouter(webDeleteHandler))
 
 	/////////////////
 	// VIEW ROUTERS
@@ -321,7 +334,6 @@ func main() {
 	router.GET("/v/:id", requireSpitIDHttpRouter(webViewHandler))
 
 	router.POST("/", httpRouterNoParams(limitSizeHandler(webAddHandler, MAX_FORM_SIZE)))
-	router.GET("/", httpRouterNoParams(limitSizeHandler(rootHandler, MAX_FORM_SIZE)))
 
 	router.ServeFiles("/static/*filepath", http.Dir("static"))
 
