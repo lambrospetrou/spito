@@ -31,7 +31,7 @@ func renderTemplate(w http.ResponseWriter, tmpl string, o interface{}) {
 // d: delete
 var validPath = regexp.MustCompile("^/(v|api[/]del)/(.+)$")
 
-func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+func requireSpitIDHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// test for general format
 		m := validPath.FindStringSubmatch(r.URL.Path)
@@ -54,10 +54,6 @@ func viewHandler(w http.ResponseWriter, r *http.Request, id string) {
 		http.NotFound(w, r)
 		return
 	}
-
-	// update the expiration - DEDUCT 1 just to count in the network delays
-	s.SetExp(int(s.DateCreated().Add(time.Duration(s.Exp())*time.Second).Unix()-
-		time.Now().UTC().Unix()) - 1)
 
 	// display the Spit
 	bundle := &struct {
@@ -260,15 +256,19 @@ func main() {
 	// use all the available cores
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	// API v1 add
-	http.HandleFunc("/api/v1-browser/spits/add", apiAddHandler)
-	http.HandleFunc("/api/v1/spits", apiAddHandler)
-	// API v1 delete
-	http.HandleFunc("/api/v1/spits/del/", makeHandler(deleteHandler))
+	/////////////////
+	// API ROUTERS
+	/////////////////
+
+	// add a new spit
+	http.HandleFunc("/api/v1/spits", limitSizeHandler(apiAddHandler, MAX_FORM_SIZE))
+
+	/////////////////
+	// VIEW ROUTERS
+	/////////////////
 
 	// view
-	http.HandleFunc("/v/", makeHandler(viewHandler))
-
+	http.HandleFunc("/v/", requireSpitIDHandler(viewHandler))
 	// if there is a parameter Spit ID call action or just go to homepage
 	http.HandleFunc("/", limitSizeHandler(rootHandler, MAX_FORM_SIZE))
 

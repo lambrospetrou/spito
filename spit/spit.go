@@ -70,7 +70,7 @@ type ISpit interface {
 	SetContent(string) string
 	SetSpitType(string) string
 
-	// make the following two FUNCTIONS of the spit package and not METHODS of spit objects
+	RemainingExpiration() int
 	FormattedCreatedTime() string
 	AbsoluteURL() string
 
@@ -146,6 +146,12 @@ func (spit *Spit) IsExisting() bool {
 
 func (spit *Spit) FormattedCreatedTime() string {
 	return spit.DateCreated_.Format("January 02, 2006 | Monday")
+}
+
+// calculates the remaining expiration - DEDUCTING 1 just to count in the network delays
+func (spit *Spit) RemainingExpiration() int {
+	return int(spit.DateCreated().Add(time.Duration(spit.Exp())*time.Second).Unix()-
+		time.Now().UTC().Unix()) - 1
 }
 
 func (spit *Spit) Save() error {
