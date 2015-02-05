@@ -307,31 +307,35 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	router := httprouter.New()
-	router.POST("/api/v1/spits", httpRouterNoParams(limitSizeHandler(apiAddHandler, MAX_FORM_SIZE)))
-	router.GET("/api/v1/spits/:id", requireSpitIDHttpRouter(apiViewHandler))
 
 	/////////////////
 	// API ROUTERS
 	/////////////////
 
+	router.POST("/api/v1/spits", httpRouterNoParams(limitSizeHandler(apiAddHandler, MAX_FORM_SIZE)))
+	router.GET("/api/v1/spits/:id", requireSpitIDHttpRouter(apiViewHandler))
+
 	// add a new spit
-	http.HandleFunc("/api/v1/spits", limitSizeHandler(apiAddHandler, MAX_FORM_SIZE))
-	http.HandleFunc("/api/v1/spits/", requireSpitIDHandler(apiViewHandler))
+	//http.HandleFunc("/api/v1/spits", limitSizeHandler(apiAddHandler, MAX_FORM_SIZE))
+	//http.HandleFunc("/api/v1/spits/", requireSpitIDHandler(apiViewHandler))
 
 	/////////////////
 	// VIEW ROUTERS
 	/////////////////
 
-	// view
-	http.HandleFunc("/v/", requireSpitIDHandler(viewHandler))
-	// if there is a parameter Spit ID call action or just go to homepage
-	http.HandleFunc("/", limitSizeHandler(rootHandler, MAX_FORM_SIZE))
+	//http.HandleFunc("/v/", requireSpitIDHandler(viewHandler))
+	router.GET("/v/:id", requireSpitIDHttpRouter(viewHandler))
 
-	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	//http.HandleFunc("/", limitSizeHandler(rootHandler, MAX_FORM_SIZE))
+	router.POST("/", httpRouterNoParams(limitSizeHandler(viewAddHandler, MAX_FORM_SIZE)))
+	router.GET("/", httpRouterNoParams(limitSizeHandler(rootHandler, MAX_FORM_SIZE)))
 
-	http.ListenAndServe(":40090", nil)
-	//http.ListenAndServe(":40090", router)
+	router.ServeFiles("/static/*filepath", http.Dir("static"))
+	//fs := http.FileServer(http.Dir("static"))
+	//http.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	//http.ListenAndServe(":40090", nil)
+	http.ListenAndServe(":40090", router)
 }
 
 //////////////////////// HELPERS ////////////////////
