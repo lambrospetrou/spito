@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/pat"
 	"github.com/julienschmidt/httprouter"
 	"github.com/lambrospetrou/spito/spit"
 	"html/template"
@@ -48,6 +49,18 @@ type APIDeleteResult struct {
 	Message string `json: "message"`
 }
 
+func requireSpitID(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// test for general format
+		id := r.URL.Query().Get(":id")
+		if !spit.ValidateSpitID(id) {
+			http.Error(w, "Invalid Spit id.", http.StatusBadRequest)
+			return
+		}
+		fn(w, r, id)
+	}
+}
+
 func requireSpitIDHttpRouter(fn func(http.ResponseWriter, *http.Request, string)) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// test for general format
@@ -61,13 +74,11 @@ func requireSpitIDHttpRouter(fn func(http.ResponseWriter, *http.Request, string)
 }
 
 func httpRouterNoParams(h http.Handler) httprouter.Handle {
-	//func httpRouterNoParams(func(http.ResponseWriter, *http.Request) fn) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		h.ServeHTTP(w, r)
 	}
 }
 func httpRouterNoParamsFn(fn func(http.ResponseWriter, *http.Request)) httprouter.Handle {
-	//func httpRouterNoParams(func(http.ResponseWriter, *http.Request) fn) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		fn(w, r)
 	}
@@ -312,33 +323,38 @@ func main() {
 	// use all the available cores
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	router := httprouter.New()
-
-	router.GET("/", httpRouterNoParams(limitSizeHandler(rootHandler, MAX_FORM_SIZE)))
-	//router.GET("/:id", requireSpitIDHttpRouter(webRedirectHandler))
+	//router := httprouter.New()
+	router := pat.New()
 
 	/////////////////
 	// API ROUTERS
 	/////////////////
 
-	router.POST("/api/v1/spits", httpRouterNoParams(limitSizeHandler(apiAddHandler, MAX_FORM_SIZE)))
-	router.GET("/api/v1/spits/:id", requireSpitIDHttpRouter(apiViewHandler))
+	router.Get("/api/v1/spits/{id}", requireSpitID(apiViewHandler))
+	router.Post("/api/v1/spits", limitSizeHandler(apiAddHandler, MAX_FORM_SIZE))
 
-	router.DELETE("/api/v1/spits/:id", requireSpitIDHttpRouter(apiDeleteHandler))
-	router.POST("/api/v1-web/spits/:id/delete", requireSpitIDHttpRouter(webDeleteHandler))
+	router.Delete("/api/v1/spits/{id}", requireSpitID(apiDeleteHandler))
+	router.Post("/api/v1-web/spits/{id}/delete", requireSpitID(webDeleteHandler))
 
 	/////////////////
 	// VIEW ROUTERS
 	/////////////////
 
-	router.GET("/v/:id", requireSpitIDHttpRouter(webViewHandler))
+	router.Get("/v/{id}", requireSpitID(webViewHandler))
 
-	router.POST("/", httpRouterNoParams(limitSizeHandler(webAddHandler, MAX_FORM_SIZE)))
+	router.Get("/{id}", requireSpitID(webRedirectHandler))
+	router.Get("/", rootHandler)
 
-	router.ServeFiles("/static/*filepath", http.Dir("static"))
+	router.Post("/", limitSizeHandler(webAddHandler, MAX_FORM_SIZE))
 
-	//http.ListenAndServe(":40090", nil)
-	http.ListenAndServe(":40090", router)
+	http.Handle("/", router)
+
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	//router.ServeFiles("/static/*filepath", http.Dir("static"))
+
+	http.ListenAndServe(":40090", nil)
+	//http.ListenAndServe(":40090", router)
 }
 
 //////////////////////// HELPERS ////////////////////
