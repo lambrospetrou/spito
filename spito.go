@@ -312,7 +312,8 @@ func webRedirectHandler(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 	// this is a text Spit so display it
-	http.Redirect(w, r, "/v/"+id, http.StatusFound)
+	//http.Redirect(w, r, "/v/"+id, http.StatusFound)
+	http.Redirect(w, r, "http://cyari.es/spito/#/view/"+id, http.StatusFound)
 	return
 }
 
