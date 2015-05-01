@@ -1,0 +1,75 @@
+{{ template "header" }}
+
+<h1>new spit</h1>
+<form action="/" method="POST" enctype="multipart/form-data">
+    {{ with . }}
+        {{ with .Errors }}{{ with .Generic }}
+            <span class="form-error">{{.}}</span>
+        {{ end }}{{ end }}
+    {{ end }}
+	<div>
+    	<label for="content">URL or plain text to shorten
+	    	{{ with . }}
+	    		{{ with .Errors }}{{ with .Content }}
+	    			<span class="form-error">{{ . }}</span>
+	    		{{ end }}{{ end }}
+	    	{{ end }}
+    	</label>
+        <textarea id="content" name="content" placeholder="Paste here your URL or plain text" required autofocus></textarea>
+    </div>
+	<label for="exp">expire in (0: infinity) - seconds
+		{{ with . }}
+			{{ with .Errors }}{{ with .Exp }}
+	    		<span class="form-error">{{ .}}</span>
+	    	{{ end }}{{ end }}
+	    {{ end }}
+    </label>
+	<input id="exp" name="exp" type="number" step="1" min="0" value="3600" required/>
+
+    <label for="image">select your image (.png .jpg, .gif)
+        {{ with . }}
+            {{ with .Errors }}{{ with .Image }}
+                <span class="form-error">{{ .}}</span>
+            {{ end }}{{ end }}
+        {{ end }}
+    </label>
+    <input id="image" name="image" type="file"/>
+
+    <input id="spit_type" name="spit_type" value="text" type="hidden"/>
+	<div>
+		<p>
+			<input type="submit" value="spit it">
+		</p>
+	</div>
+</form>
+
+<div class="notice">
+	<h3>notes</h3>
+	<ul>
+		<li>All <strong>spi.to</strong> URLs are public and can be accessed by anyone who has the link.</li>
+		<li><strong>Spito</strong> does not look into the content of your links or text spits and only take some statistics on the spit link itself (ie. number of clicks-visits)</li>
+	</ul>
+</div>
+
+<div class="usage-tips">
+	<h3 onclick="displayHideTips();">usage tips (click to toggle)</h3>
+	<ul>
+		<li><strong>Spito</strong> can be used like every other <strong>URL link shortener</strong> (ie. <em>is.gd</em> or <em>goo.gl</em>) in order to shrink down long URLs into something less than 20 characters that is easy to share and tell everybody.</li>
+		<li>Additionally, Spito is a <strong>plain text sharing service</strong> where you can just throw any text inside and generate a super-small link in order to send it over to your friends or colleagues.</li>
+		<li>Specify an expiration time for your spit in order to destroy it when the given seconds have passed.</li>
+		<li>Spit links are immutable, thus cannot be edited after being created and when the expiration time has passed they <strong>are</strong> deleted from our database so no retrieval is possible.</li>
+	</ul>
+	<script>
+		function displayHideTips() {
+			var tips = document.body.querySelector('.usage-tips ul');
+			if ( tips.style.display == "none" || tips.style.display == "" || tips.style.display == undefined ) {
+				tips.style.display = 'block';
+			}else{
+				tips.style.display = 'none';
+			}
+
+		}
+	</script>
+</div>
+
+{{ template "footer" }}

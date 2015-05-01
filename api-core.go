@@ -22,6 +22,8 @@ var CORSAllowedOrigins map[string]bool = map[string]bool{
     "http://localhost:8080":  true,
 	"http://localhost":       true,
 	"http://spi.to":          true,
+	"http://cyari.es":        true,
+	"http://www.cyari.es":    true,
 }
 
 // the struct that is passed in the Add handlers
