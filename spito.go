@@ -44,6 +44,19 @@ type APIAddResult struct {
 
 	Message string `json: "message"`
 }
+type APIViewResult struct {
+	Id                   string    `json:"id"`
+	Exp                  int       `json:"expiration"`
+	Content              string    `json:"content"`
+	SpitType             string    `json:"spit_type"`
+	DateCreated          time.Time `json:"date_created"`
+	FormattedCreatedTime string    `json:"date_created_fmt"`
+	IsURL                bool      `json:"is_url"`
+	AbsoluteURL          string    `json:"absolute_url"`
+    Clicks               uint64    `json:"clicks"`
+
+	Message string `json: "message"`
+}
 
 type APIDeleteResult struct {
 	Message string `json: "message"`
@@ -219,10 +232,11 @@ func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	}
 
 	// we are good to go - spit fetched successfully
-	result := &APIAddResult{
+	result := &APIViewResult{
 		Id: s.Id(), Exp: s.Exp(), Content: s.Content(), SpitType: s.SpitType(),
 		DateCreated: s.DateCreated(), FormattedCreatedTime: s.FormattedCreatedTime(),
-		IsURL: s.IsURL(), AbsoluteURL: s.AbsoluteURL(), Message: "Successfully fetched Spit!",
+		IsURL: s.IsURL(), AbsoluteURL: s.AbsoluteURL(), Clicks: s.Clicks(),
+        Message: "Successfully fetched Spit!",
 	}
 	b, err := json.Marshal(result)
 	if err != nil {
