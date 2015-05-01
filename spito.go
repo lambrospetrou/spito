@@ -316,6 +316,28 @@ func webRedirectHandler(w http.ResponseWriter, r *http.Request, id string) {
 	return
 }
 
+/*
+	Access-Control-Allow-Origin: http://foo.example
+	Access-Control-Allow-Methods: POST, GET, OPTIONS
+	Access-Control-Allow-Headers: X-PINGOTHER
+	Access-Control-Max-Age: 1728000
+*/
+func CORSEnable(fn http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if CORSAllowedOrigins[r.Header.Get("Origin")] {
+			w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "X-Spito, Content-type")
+			w.Header().Set("Access-Control-Max-Age", "1728000")
+		}
+		fn(w, r)
+	}
+}
+
+func OKHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintf(w, "")
+}
+
 func main() {
 
 	fmt.Println("Starting Spito at: 40090")
@@ -330,11 +352,13 @@ func main() {
 	// API ROUTERS
 	/////////////////
 
-	router.Get("/api/v1/spits/{id}", requireSpitID(apiViewHandler))
-	router.Post("/api/v1/spits", limitSizeHandler(apiAddHandler, MAX_FORM_SIZE))
+	router.Add("OPTIONS", "/", CORSEnable(OKHandler))
 
-	router.Delete("/api/v1/spits/{id}", requireSpitID(apiDeleteHandler))
-	router.Post("/api/v1-web/spits/{id}/delete", limitSizeHandler(requireSpitID(webDeleteHandler), MAX_FORM_SIZE))
+	router.Get("/api/v1/spits/{id}", CORSEnable(requireSpitID(apiViewHandler)))
+	router.Post("/api/v1/spits", CORSEnable(limitSizeHandler(apiAddHandler, MAX_FORM_SIZE)))
+
+	router.Delete("/api/v1/spits/{id}", CORSEnable(requireSpitID(apiDeleteHandler)))
+	router.Post("/api/v1-web/spits/{id}/delete", CORSEnable(limitSizeHandler(requireSpitID(webDeleteHandler), MAX_FORM_SIZE)))
 
 	/////////////////
 	// VIEW ROUTERS

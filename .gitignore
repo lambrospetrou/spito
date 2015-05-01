@@ -4,6 +4,7 @@ spito
 ./spito
 RUNNING_PID
 RUNNING_ID
+*.swp
 
 # sublime related
 *.sublime-workspace

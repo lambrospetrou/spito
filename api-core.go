@@ -16,6 +16,14 @@ const (
 	MAX_FORM_SIZE int64 = 1 << 23
 )
 
+var CORSAllowedOrigins map[string]bool = map[string]bool{
+	"http://localhost:63342": true,
+	"http://localhost:40090": true,
+    "http://localhost:8080":  true,
+	"http://localhost":       true,
+	"http://spi.to":          true,
+}
+
 // the struct that is passed in the Add handlers
 // when there are wrong arguments in the request.
 // InputExp: is the value of Expiration in request
