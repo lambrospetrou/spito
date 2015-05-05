@@ -181,9 +181,12 @@ func (spit *Spit) Save() error {
 	}
 
 	//fmt.Println("saving: ", spit.Exp_, spit.Content_, spit.SpitType_)
-	epochExp := int(spit.DateCreated().Unix() + int64(spit.Exp()))
-	spit.Exp_ = epochExp
-	fmt.Println(epochExp)
+	var epochExp int = 0
+	if spit.Exp() > 0 {
+		epochExp = int(spit.DateCreated().Unix() + int64(spit.Exp()))
+		spit.Exp_ = epochExp
+	}
+	//fmt.Println(epochExp)
 
 	jsonBytes, err := json.Marshal(spit)
 	if err != nil {
