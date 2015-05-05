@@ -181,12 +181,14 @@ func (spit *Spit) Save() error {
 	}
 
 	//fmt.Println("saving: ", spit.Exp_, spit.Content_, spit.SpitType_)
+	epochExp := int(spit.DateCreated().Unix() + int64(spit.Exp()))
+	spit.Exp_ = epochExp
+	fmt.Println(epochExp)
 
 	jsonBytes, err := json.Marshal(spit)
 	if err != nil {
 		return errors.New("Could not convert Spit to JSON format!")
 	}
-	epochExp := int(spit.DateCreated().Unix() + int64(spit.Exp()))
 	err = db.Set("spit::clicks::"+spit.Id_, epochExp, 0)
 	if err != nil {
 		return errors.New("Could not create the new Spit!")
@@ -198,6 +200,9 @@ func (spit *Spit) Del() error {
 	db, err := lpdb.Instance()
 	if err != nil {
 		return errors.New("Could not get instance of Couchbase")
+	}
+	if err = db.Delete("spit::clicks::" + spit.Id_); err != nil {
+		return errors.New("Could not delete information of Spit!")
 	}
 	return db.Delete("spit::" + spit.Id_)
 }
@@ -259,7 +264,8 @@ func Load(id string) (ISpit, error) {
 
 func New() (ISpit, error) {
 	// use UTC time everywhere
-	spit := &Spit{Exp_: 24 * 60, DateCreated_: time.Now().UTC()}
+	timeNow := time.Now().UTC()
+	spit := &Spit{Exp_: int(timeNow.Unix()) + (24 * 60), DateCreated_: timeNow}
 	// set the ID to maximum uint64 in order to be changed by Save()
 	spit.IdRaw_ = math.MaxUint64
 	spit.Id_ = ""
