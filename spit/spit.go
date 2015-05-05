@@ -94,6 +94,7 @@ func (spit *Spit) SetId(id string) string {
 }
 
 func (spit *Spit) SetExp(e int) int {
+	//spit.Exp_ = time.Unix(int64(time.Now().Second())+int64(e), 0).Second()
 	spit.Exp_ = e
 	return spit.Exp_
 }
@@ -185,11 +186,12 @@ func (spit *Spit) Save() error {
 	if err != nil {
 		return errors.New("Could not convert Spit to JSON format!")
 	}
-	err = db.Set("spit::clicks::"+spit.Id_, spit.Exp_, 0)
+	epochExp := int(spit.DateCreated().Unix() + int64(spit.Exp()))
+	err = db.Set("spit::clicks::"+spit.Id_, epochExp, 0)
 	if err != nil {
 		return errors.New("Could not create the new Spit!")
 	}
-	return db.SetRaw("spit::"+spit.Id_, spit.Exp_, jsonBytes)
+	return db.SetRaw("spit::"+spit.Id_, epochExp, jsonBytes)
 }
 
 func (spit *Spit) Del() error {

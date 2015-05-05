@@ -1,0 +1,141 @@
+* {
+    padding: 0;
+    margin: 0;
+    -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+    box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
+body {
+    background-color: #333333;
+    font-family: Verdana;
+    color: #efefef;
+}
+
+h1 {
+    font-size: 2.5em;
+    color: #efefef;
+}
+
+
+.outer-wrapper {
+    width: 100%;
+}
+
+.inner-wrapper {
+    width: 700px;
+    margin: 0 auto;
+}
+
+#outer-header {
+    padding: 20px 0;
+    text-align: center;
+}
+
+#outer-mode-bar {
+    background-color: #424242;
+}
+
+#mode-bar {
+    padding-top: 30px;
+    padding-bottom: 30px;
+}
+
+#mode-bar ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0 auto;
+}
+
+#mode-bar ul li {
+    margin: 0;
+    display: inline-block;
+    width: calc(100% / 3 - 1%);
+    text-align: center;
+}
+
+#mode-bar img {
+    width: 80%;
+    opacity: 0.7;
+}
+
+#mode-bar img:hover {
+    opacity: 1;
+    cursor: pointer;
+}
+
+#forms {
+    margin: 20px 0 0 0;
+}
+
+.form-new-spit {
+    margin-top: 20px;
+}
+
+.form-new-spit form {
+    padding: 0;
+    margin: 0;
+}
+
+input,
+textarea {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    background-color: #ffffff;
+    border: 1px solid #ffffff;
+    outline: 0;
+    font-size: 1em;
+    padding: 5px;
+    font-family: Verdana;
+}
+
+/* all */
+::-webkit-input-placeholder { color:#424242; }
+::-moz-placeholder { color:#424242; } /* firefox 19+ */
+:-ms-input-placeholder { color:#424242; } /* ie */
+input:-moz-placeholder { color:#424242; }
+
+input:focus, input:active,
+textarea:focus, textarea:active {
+    border: 1px solid #00ccd6;
+    max-width: 100%;
+    color: #333333;
+}
+
+.btn, button, input[type="button"],
+input[type="submit"] {
+    padding: 10px;
+    border: 0;
+    outline: 0;
+    color: #000000;
+    font-family: Verdana;
+    font-weight: bold;
+    font-size: 1.2em;
+    opacity: 0.8;
+}
+
+.btn:hover {
+    opacity: 1;
+    cursor: pointer;
+}
+
+.btn-yellow {
+    background-color: #ffd900;
+    color: #000000;
+}
+
+.btn-grey {
+    background-color: #efefef;
+    color: #333333;
+}
+
+.btn-blue {
+    background-color: #00ccd6;
+    color: #ffffff;
+}
+
+
+#inner-footer{
+    padding: 20px 0;
+}
