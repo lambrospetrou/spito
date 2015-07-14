@@ -9,7 +9,7 @@ go build
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 
-cp -r spito static templates "$BUILD_DIR/"
+cp -r spito static templates deploy_linode.sh "$BUILD_DIR/"
 
 # zip the bundle into a single file
 tar -cvzf spitoapi.tgz "$BUILD_DIR"

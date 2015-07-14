@@ -62,7 +62,7 @@ func CoreAddMultiSpit(r *http.Request) (spit.ISpit, error) {
 	result := &ErrCoreAdd{}
 
 	requestType := r.Header.Get("content-type")
-	fmt.Println(requestType)
+	//fmt.Println(requestType)
 
 	// try to parse the form with a maximum size
 	if strings.HasPrefix(requestType, CONTENT_TYPE_MULTIPART) {
