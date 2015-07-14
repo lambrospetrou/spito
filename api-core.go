@@ -9,17 +9,21 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
 const (
 	MAX_FORM_SIZE int64 = 1 << 23
+
+	CONTENT_TYPE_MULTIPART  string = "multipart/form-data"
+	CONTENT_TYPE_URLENCODED string = "application/x-www-form-urlencoded"
 )
 
 var CORSAllowedOrigins map[string]bool = map[string]bool{
 	"http://localhost:63342": true,
 	"http://localhost:40090": true,
-    "http://localhost:8080":  true,
+	"http://localhost:8080":  true,
 	"http://localhost":       true,
 	"http://spi.to":          true,
 	"http://cyari.es":        true,
@@ -57,11 +61,27 @@ func (e *ErrCoreAddDB) Error() string {
 func CoreAddMultiSpit(r *http.Request) (spit.ISpit, error) {
 	result := &ErrCoreAdd{}
 
+	requestType := r.Header.Get("content-type")
+	fmt.Println(requestType)
+
 	// try to parse the form with a maximum size
-	err := r.ParseMultipartForm(MAX_FORM_SIZE)
-	if err != nil {
+	if strings.HasPrefix(requestType, CONTENT_TYPE_MULTIPART) {
+		err := r.ParseMultipartForm(MAX_FORM_SIZE)
+		if err != nil {
+			result.Errors = make(map[string]string)
+			result.Errors["Generic"] = "Too much data submitted (up to 8MB) or invalid form data!"
+			return nil, result
+		}
+	} else if strings.HasPrefix(requestType, CONTENT_TYPE_URLENCODED) {
+		err := r.ParseForm()
+		if err != nil {
+			result.Errors = make(map[string]string)
+			result.Errors["Generic"] = "Invalid form data!"
+			return nil, result
+		}
+	} else {
 		result.Errors = make(map[string]string)
-		result.Errors["Generic"] = "Too much data submitted (up to 8MB) or invalid form data!"
+		result.Errors["Generic"] = "Invalid Content-Type specified!"
 		return nil, result
 	}
 
