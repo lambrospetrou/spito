@@ -286,7 +286,16 @@ func rootHandler(w http.ResponseWriter, r *http.Request) {
 	var id string = r.URL.Path[1:]
 	if len(id) == 0 {
 		// load the index page
-		renderTemplate(w, "add", nil)
+		//renderTemplate(w, "add", nil)
+		// check if this Spit is a URL that we should redirect to
+
+		// HTTP 1.1.
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		// HTTP 1.0.
+		w.Header().Set("Pragma", "no-cache")
+		// Proxies
+		w.Header().Set("Expires", "0")
+		http.Redirect(w, r, "http://cyari.es/spito/", http.StatusMovedPermanently)
 		return
 	}
 	// make sure there is a valid Spit ID
@@ -379,12 +388,12 @@ func main() {
 	// VIEW ROUTERS
 	/////////////////
 
-	router.Get("/v/{id}", requireSpitID(webViewHandler))
+	//router.Get("/v/{id}", requireSpitID(webViewHandler))
 
-	router.Get("/{id}", requireSpitID(webRedirectHandler))
+	//router.Get("/{id}", requireSpitID(webRedirectHandler))
 	router.Get("/", rootHandler)
 
-	router.Post("/", limitSizeHandler(webAddHandler, MAX_FORM_SIZE))
+	//router.Post("/", limitSizeHandler(webAddHandler, MAX_FORM_SIZE))
 
 	http.Handle("/", router)
 
