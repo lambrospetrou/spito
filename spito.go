@@ -14,11 +14,15 @@ import (
 	"time"
 )
 
+/*
 var templates = template.Must(template.ParseFiles(
 	"templates/partials/header.html",
 	"templates/partials/footer.html",
 	"templates/view.html",
 	"templates/add.html"))
+*/
+var templates = template.Must(template.ParseFiles(
+	"spitoweb/index.html"))
 
 func renderTemplate(w http.ResponseWriter, tmpl string, o interface{}) {
 	// now we can call the correct template by the basename filename
@@ -97,6 +101,7 @@ func httpRouterNoParamsFn(fn func(http.ResponseWriter, *http.Request)) httproute
 	}
 }
 
+/*
 func webDeleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 	s, err := spit.Load(id)
 	if err != nil {
@@ -109,7 +114,7 @@ func webDeleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 	}
 	http.Redirect(w, r, "/", http.StatusFound)
 }
-
+*/
 func apiDeleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 	s, err := spit.Load(id)
 	if err != nil {
@@ -191,6 +196,7 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+/*
 func webAddHandler(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(r.Method) == "post" {
 		s, err := CoreAddMultiSpit(r)
@@ -222,7 +228,7 @@ func webAddHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Not supported method", http.StatusMethodNotAllowed)
 	return
 }
-
+*/
 func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	// fetch the Spit with the requested id
 	s, err := spit.Load(id)
@@ -250,6 +256,7 @@ func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	return
 }
 
+/*
 func webViewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	// fetch the Spit with the requested id
 	s, err := spit.Load(id)
@@ -270,38 +277,9 @@ func webViewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	}
 	renderTemplate(w, "view", bundle)
 }
-
-func limitSizeHandler(fn func(http.ResponseWriter, *http.Request),
-	size int64) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		r.Body = http.MaxBytesReader(w, r.Body, size)
-		fn(w, r)
-	}
-}
-
-// show all posts
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	//fmt.Println("path: ", r.URL.Path)
-
-	var id string = r.URL.Path[1:]
-	if len(id) == 0 {
-		// load the index page
-		//renderTemplate(w, "add", nil)
-		// check if this Spit is a URL that we should redirect to
-
-		// HTTP 1.1.
-		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-		// HTTP 1.0.
-		w.Header().Set("Pragma", "no-cache")
-		// Proxies
-		w.Header().Set("Expires", "0")
-		http.Redirect(w, r, "http://cyari.es/spito/", http.StatusMovedPermanently)
-		return
-	}
-	// make sure there is a valid Spit ID
-	webRedirectHandler(w, r, id)
-}
-
+*/
+// tries to find the Spit with the passed ID and either redirects to it if it is a URL
+// or it goes to the Spit viewer
 func webRedirectHandler(w http.ResponseWriter, r *http.Request, id string) {
 	// make sure there is a valid Spit ID
 	if !spit.ValidateSpitID(id) {
@@ -335,9 +313,42 @@ func webRedirectHandler(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 	// this is a text Spit so display it
-	//http.Redirect(w, r, "/v/"+id, http.StatusFound)
-	http.Redirect(w, r, "http://cyari.es/spito/#/view/"+id, http.StatusFound)
+	http.Redirect(w, r, "#/view/"+id, http.StatusFound)
+	//http.Redirect(w, r, "http://cyari.es/spito/#/view/"+id, http.StatusFound)
 	return
+}
+
+func limitSizeHandler(fn func(http.ResponseWriter, *http.Request),
+	size int64) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, size)
+		fn(w, r)
+	}
+}
+
+// either parse the Spit ID or if the path is /#/something go to the website
+func rootHandler(w http.ResponseWriter, r *http.Request) {
+	//fmt.Println("path: ", r.URL.Path)
+
+	// check if the path contains SpitID or the /#/xxx which means go to the website
+	var id string = r.URL.Path[1:]
+	if len(id) == 0 {
+		// load the index page
+		//renderTemplate(w, "add", nil)
+		// check if this Spit is a URL that we should redirect to
+
+		// HTTP 1.1.
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		// HTTP 1.0.
+		w.Header().Set("Pragma", "no-cache")
+		// Proxies
+		w.Header().Set("Expires", "0")
+		//http.Redirect(w, r, "http://cyari.es/spito/", http.StatusTemporaryRedirect)
+		renderTemplate(w, "index", nil)
+		return
+	}
+	// make sure there is a valid Spit ID
+	webRedirectHandler(w, r, id)
 }
 
 /*
@@ -381,8 +392,9 @@ func main() {
 	router.Get("/api/v1/spits/{id}", CORSEnable(requireSpitID(apiViewHandler)))
 	router.Post("/api/v1/spits", CORSEnable(limitSizeHandler(apiAddHandler, MAX_FORM_SIZE)))
 
+	// TODO - make these internal
 	router.Delete("/api/v1/spits/{id}", CORSEnable(requireSpitID(apiDeleteHandler)))
-	router.Post("/api/v1-web/spits/{id}/delete", CORSEnable(limitSizeHandler(requireSpitID(webDeleteHandler), MAX_FORM_SIZE)))
+	//router.Post("/api/v1-web/spits/{id}/delete", CORSEnable(limitSizeHandler(requireSpitID(webDeleteHandler), MAX_FORM_SIZE)))
 
 	/////////////////
 	// VIEW ROUTERS
@@ -397,8 +409,15 @@ func main() {
 
 	http.Handle("/", router)
 
-	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	/**
+	 *	SINGLE LETTER (maybe 2-letter too) DOMAINS ARE RESERVED FOR INTERNAL USAGE
+	 */
+	// downloads handler - /d/
+	fs_d := http.FileServer(http.Dir("downloads"))
+	http.Handle("/d/", http.StripPrefix("/d/", fs_d))
+	// static files handler - /s/
+	fs_s := http.FileServer(http.Dir("spitoweb/s"))
+	http.Handle("/s/", http.StripPrefix("/s/", fs_s))
 	//router.ServeFiles("/static/*filepath", http.Dir("static"))
 
 	http.ListenAndServe(":40090", nil)
