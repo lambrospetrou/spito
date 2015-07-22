@@ -69,6 +69,7 @@ type ISpit interface {
 	SetExp(int) int
 	SetContent(string) string
 	SetSpitType(string) string
+	SetIsURL(bool) bool
 
 	RemainingExpiration() int
 	FormattedCreatedTime() string
@@ -107,6 +108,11 @@ func (spit *Spit) SetContent(c string) string {
 func (spit *Spit) SetSpitType(t string) string {
 	spit.SpitType_ = t
 	return spit.SpitType_
+}
+
+func (spit *Spit) SetIsURL(u bool) bool {
+	spit.IsURL_ = u
+	return spit.IsURL_
 }
 
 func (spit *Spit) IdRaw() uint64 {
@@ -173,11 +179,6 @@ func (spit *Spit) Save() error {
 	spit.DateCreated_ = time.Now()
 	if spit.Exp_ < 0 {
 		spit.Exp_ = 0
-	}
-	content := strings.TrimSpace(spit.Content_)
-	spit.IsURL_ = utils.IsUrl(content)
-	if spit.IsURL_ {
-		spit.Content_ = content
 	}
 
 	//fmt.Println("saving: ", spit.Exp_, spit.Content_, spit.SpitType_)
@@ -363,6 +364,15 @@ func NewFromRequest(r *http.Request) (ISpit, error) {
 			spitError.ErrorsMap["Content"] = fmt.Sprintf("Spit content should be less than %v characters",
 				SPIT_MAX_CONTENT)
 			return nil, spitError
+		}
+		// make sure the URL is correct if it is a URL type
+		if spitType == SPIT_TYPE_URL {
+			isurl := utils.IsUrl(content)
+			if !isurl {
+				spitError.ErrorsMap["Content"] = "URL specified is not valid..."
+				return nil, spitError
+			}
+			nSpit.SetIsURL(isurl)
 		}
 		nSpit.SetContent(content)
 

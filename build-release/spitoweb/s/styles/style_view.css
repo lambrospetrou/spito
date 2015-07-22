@@ -1,0 +1,222 @@
+#view-spit-form {
+    width: 90%;
+    max-width: 600px;
+    margin: 0 auto;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+#view-spit-form #spit-id {
+    width: calc(100% - 115px);
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#view-spit-form button {
+    display: inline-block;
+    background: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    outline: none;
+}
+
+#view-spit-errors {
+    width: 90%;
+    margin: 30px auto;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    color: #920000;
+    font-style: italic;
+    font-weight: bold;
+}
+
+#view-spit-information {
+    width: 90%;
+    margin: 30px auto;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.spit-header {
+    position: relative;
+}
+
+.spit-header h1 {
+    font-size: 150%;
+    color: #920000;
+}
+.spit-header img {
+    vertical-align: middle;
+    padding: 0;
+    margin: 0;
+}
+
+
+.spit-meta-top{
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+}
+.spit-meta-top ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+.spit-meta-top ul li {
+    padding: 0;
+    display: inline-block;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    margin: 0px 5px 15px 0px;
+}
+
+.spit-meta-bottom{
+    margin-top: 10px;
+    text-align: right;
+    font-style: italic;
+    color: rgb(70, 69, 67);
+}
+.spit-meta-bottom ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+.spit-meta-bottom ul li {
+    display: inline-block;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    margin-bottom: 15px;
+}
+
+.spit-meta-bottom .heading {
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    font-weight: bold;
+    font-style: normal;
+    border: 1px dotted rgb(64, 78, 153);
+    border-radius: 3px;
+    padding: 5px 5px;
+    margin-right: 5px;
+    background-color: rgb(228, 224, 221);
+}
+
+
+.spit-body {
+    position: relative;
+    margin: 10px auto;
+    width: 100%;
+    font-family: 'Open Sans', 'Lato', monospace;
+    font-size: 14px;
+    color: #333333;
+    letter-spacing: 0.08em;
+    box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    padding: 0;
+    outline: none;
+    border: solid 1px #ffffff;
+    -moz-box-shadow: 0px 0px 5px 1px #bfbfbf;
+    -webkit-box-shadow: 0px 0px 5px 1px #bfbfbf;
+    box-shadow: 0px 0px 5px 1px #bfbfbf;
+    background-color: #fdfdfd;
+}
+
+.spit-content {
+    width: 100%;
+    max-width: 100%;
+    font-family: 'Open Sans', 'Lato', monospace;
+    font-size: 14px;
+    color: #333333;
+    letter-spacing: 0.08em;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    padding: 10px;
+    outline: none;
+    border: none;
+    background-color: #fdfdfd;
+}
+  .spit-content pre {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    font-family: 'Open Sans', 'Lato', monospace;
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    outline: none;
+    border: 0;
+
+    white-space: pre-wrap;       /* css-3 */
+    white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+    white-space: -pre-wrap;      /* Opera 4-6 */
+    white-space: -o-pre-wrap;    /* Opera 7 */
+    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+  }
+
+.spit-meta-body {
+    padding: 10px;
+    text-align: right;
+    font-style: italic;
+    color: rgb(70, 69, 67);
+    background-color: #f0f0f0;
+}
+.spit-meta-body ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    font-size: 80%;
+}
+.spit-meta-body ul li {
+    display: inline-block;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    margin: 5px;
+}
+
+.spit-meta-body .heading {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+    font-weight: bold;
+    font-style: normal;
+    border: 1px dotted #fafafa;
+    border-radius: 1px;
+    padding: 5px 5px;
+    margin-right: 5px;
+    background-color: #fff;
+}
+
+.spit-meta-top ul li a {
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: none;
+    opacity: 1;
+    color: inherit;
+    font-weight: inherit;
+    text-decoration: none;
+}
+
+.spit-header a paper-button {
+  min-width: 0px;
+}
+
+.spit-header .qr-code {
+  float: right;
+}
+
+@media (max-width: 650px) {
+    .spit-meta-body {
+        text-align: left;
+    }
+    .spit-header .qr-code {
+      float: none;
+      text-align: center;
+    }
+}
