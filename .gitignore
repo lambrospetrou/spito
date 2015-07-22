@@ -9,6 +9,4 @@ RUNNING_ID
 # sublime related
 *.sublime-workspace
 
-./build_release/
-build_release/
-./build_release/*
+build-release/
