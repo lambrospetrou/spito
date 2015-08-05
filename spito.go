@@ -14,13 +14,6 @@ import (
 	"time"
 )
 
-/*
-var templates = template.Must(template.ParseFiles(
-	"templates/partials/header.html",
-	"templates/partials/footer.html",
-	"templates/view.html",
-	"templates/add.html"))
-*/
 var templates = template.Must(template.ParseFiles(
 	"spitoweb/index.html"))
 
@@ -101,20 +94,6 @@ func httpRouterNoParamsFn(fn func(http.ResponseWriter, *http.Request)) httproute
 	}
 }
 
-/*
-func webDeleteHandler(w http.ResponseWriter, r *http.Request, id string) {
-	s, err := spit.Load(id)
-	if err != nil {
-		http.Error(w, "Could not find the Spit specified!", http.StatusBadRequest)
-		return
-	}
-	if err = s.Del(); err != nil {
-		http.Error(w, "Could not delete the spit specified!", http.StatusBadRequest)
-		return
-	}
-	http.Redirect(w, r, "/", http.StatusFound)
-}
-*/
 func apiDeleteHandler(w http.ResponseWriter, r *http.Request, id string) {
 	s, err := spit.Load(id)
 	if err != nil {
@@ -196,39 +175,6 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-/*
-func webAddHandler(w http.ResponseWriter, r *http.Request) {
-	if strings.ToLower(r.Method) == "post" {
-		s, err := CoreAddMultiSpit(r)
-
-		if err != nil {
-			if _, ok := err.(*ErrCoreAdd); ok {
-				// it was an error during request validation
-				validationRes := err.(*ErrCoreAdd)
-				renderTemplate(w, "add", validationRes)
-				return
-			} else if _, ok := err.(*ErrCoreAddDB); ok {
-				errDB := err.(*ErrCoreAddDB)
-				log.Printf("viewAddHandler::Internal error: %v", errDB)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			} else {
-				// other internal error
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				log.Fatalf("viewAddHandler::Unknown Error: %v", err)
-				return
-
-			}
-		}
-
-		// spit created successfully
-		http.Redirect(w, r, "/v/"+s.Id(), http.StatusFound)
-		return
-	} // end of POST
-	http.Error(w, "Not supported method", http.StatusMethodNotAllowed)
-	return
-}
-*/
 func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	// fetch the Spit with the requested id
 	s, err := spit.Load(id)
@@ -256,28 +202,6 @@ func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
 	return
 }
 
-/*
-func webViewHandler(w http.ResponseWriter, r *http.Request, id string) {
-	// fetch the Spit with the requested id
-	s, err := spit.Load(id)
-	if err != nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	// display the Spit
-	bundle := &struct {
-		Spit   *spit.ISpit
-		Footer *struct{ Year int }
-		Header *struct{ Title string }
-	}{
-		Spit:   &s,
-		Footer: &struct{ Year int }{Year: time.Now().Year()},
-		Header: &struct{ Title string }{Title: s.Id()},
-	}
-	renderTemplate(w, "view", bundle)
-}
-*/
 // tries to find the Spit with the passed ID and either redirects to it if it is a URL
 // or it goes to the Spit viewer
 func webRedirectHandler(w http.ResponseWriter, r *http.Request, id string) {
@@ -399,14 +323,7 @@ func main() {
 	/////////////////
 	// VIEW ROUTERS
 	/////////////////
-
-	//router.Get("/v/{id}", requireSpitID(webViewHandler))
-
-	//router.Get("/{id}", requireSpitID(webRedirectHandler))
 	router.Get("/", rootHandler)
-
-	//router.Post("/", limitSizeHandler(webAddHandler, MAX_FORM_SIZE))
-
 	http.Handle("/", router)
 
 	/**
