@@ -2,6 +2,7 @@ package spit
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"math/rand"
 	"strconv"
@@ -13,16 +14,18 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
-func BuildSpitFromDynamo(dbAttrValue *dynamodb.AttributeValue) *Spit {
-	ns := &Spit{}
-	if err := dynamodbattribute.Unmarshal(dbAttrValue, ns); err != nil {
-		log.Println("Error while unmarshalling DynamoDB item: ", err)
-		return nil
+func _BuildSpitFromDynamo(dbAttrValue map[string]*dynamodb.AttributeValue, ns *Spit) (*Spit, error) {
+	if ns == nil {
+		ns = &Spit{}
 	}
-	return ns
+	if err := dynamodbattribute.UnmarshalMap(dbAttrValue, ns); err != nil {
+		log.Println("Error while unmarshalling DynamoDB item: ", err)
+		return nil, err
+	}
+	return ns, nil
 }
 
-func BuildDynamoAtributeValueFromSpit(s *Spit) *dynamodb.AttributeValue {
+func _BuildDynamoAtributeValueFromSpit(s *Spit) *dynamodb.AttributeValue {
 	av, err := dynamodbattribute.Marshal(s)
 	if err != nil {
 		log.Println("Error while marshalling Spit to DynamoDB item: ", err)
@@ -41,8 +44,16 @@ type awsDynamoDBStorager struct {
 	svc     *dynamodb.DynamoDB
 }
 
+type DynamoDbItemNotFoundError struct {
+	msg string
+}
+
+func (e DynamoDbItemNotFoundError) Error() string {
+	return fmt.Sprintf("DynamoDbItemNotFoundError: %v", e.msg)
+}
+
 func (p *awsDynamoDBStorager) Put(s *Spit) error {
-	av := BuildDynamoAtributeValueFromSpit(s)
+	av := _BuildDynamoAtributeValueFromSpit(s)
 	if av == nil {
 		return errors.New("dynamo_adapter::Put::Could not marshal Spit")
 	}
@@ -64,17 +75,13 @@ func (p *awsDynamoDBStorager) Get(key string) (*Spit, error) {
 	s := &Spit{}
 	err := p.GetRaw(_TABLE_NAME_SPITS_DATA, "id", key, s)
 	if err != nil {
-		log.Println("dynamo_adapter::Get::", err)
+		// Only log if it is an error, not just Item not Found
+		if _, ok := err.(DynamoDbItemNotFoundError); !ok {
+			log.Println("dynamo_adapter::Get::", err)
+		}
 		return nil, err
 	}
-	return s, nil
-}
 
-func (p *awsDynamoDBStorager) GetWithAnalytics(key string) (*Spit, error) {
-	s, err := p.Get(key)
-	if err != nil {
-		return nil, err
-	}
 	// Check the expiration date and delete it if necessary
 	timeNow := time.Now().UTC()
 	timeThen, _ := time.Parse(time.RFC3339, s.DateExpiration)
@@ -96,7 +103,14 @@ func (p *awsDynamoDBStorager) GetWithAnalytics(key string) (*Spit, error) {
 		}
 		return nil, errors.New("Spit expired!")
 	}
+	return s, nil
+}
 
+func (p *awsDynamoDBStorager) GetWithAnalytics(key string) (*Spit, error) {
+	_, err := p.Get(key)
+	if err != nil {
+		return nil, err
+	}
 	// Update the clicks
 	params := &dynamodb.UpdateItemInput{
 		Key: map[string]*dynamodb.AttributeValue{ // Required
@@ -122,9 +136,7 @@ func (p *awsDynamoDBStorager) GetWithAnalytics(key string) (*Spit, error) {
 		return nil, err
 	}
 
-	return BuildSpitFromDynamo(&dynamodb.AttributeValue{
-		M: resp.Attributes,
-	}), nil
+	return _BuildSpitFromDynamo(resp.Attributes, nil)
 }
 
 func (p *awsDynamoDBStorager) GetRaw(tableName string, keyName string, keyValue string, o interface{}) error {
@@ -147,12 +159,9 @@ func (p *awsDynamoDBStorager) GetRaw(tableName string, keyName string, keyValue 
 		return err
 	}
 	if len(resp.Items) == 0 {
-		return errors.New("No item found")
+		return DynamoDbItemNotFoundError{fmt.Sprintf("%v:%v:%v", tableName, keyName, keyValue)}
 	}
-
-	if err := dynamodbattribute.Unmarshal(&dynamodb.AttributeValue{
-		M: resp.Items[0],
-	}, o); err != nil {
+	if err := dynamodbattribute.UnmarshalMap(resp.Items[0], o); err != nil {
 		log.Println("dynamo_adapter::GetRaw::", "Error while unmarshalling DynamoDB item: ", err)
 		return err
 	}
