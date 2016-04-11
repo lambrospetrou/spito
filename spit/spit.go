@@ -107,16 +107,16 @@ func IsUrl(spit *Spit) bool {
 	return spit.SpitType == SPIT_TYPE_URL
 }
 
-func Load(id string) (*Spit, error) {
-	return storager.GetWithAnalytics(_BuildSpitKey(id))
-}
-
 type SpitError struct {
 	ErrorsMap map[string]string
 }
 
 func (e *SpitError) Error() string {
 	return fmt.Sprintf("SpitError: %v", e.ErrorsMap)
+}
+
+func Load(id string) (*Spit, error) {
+	return storager.GetWithAnalytics(_BuildSpitKey(id))
 }
 
 func _NewSpit(content string, exp int, spit_type string) (*Spit, error) {
