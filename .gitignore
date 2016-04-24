@@ -6,7 +6,14 @@ RUNNING_PID
 RUNNING_ID
 *.swp
 
+build/
+
 # sublime related
 *.sublime-workspace
 
 build-release/
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
