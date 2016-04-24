@@ -79,6 +79,7 @@ func (spit *Spit) Save() error {
 	if err = storager.Put(spit); err != nil {
 		log.Println(err)
 	}
+	spit.Id = _BuildSpitIdFromKey(spit.Id)
 	return nil
 }
 

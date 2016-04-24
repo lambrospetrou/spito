@@ -120,6 +120,8 @@ func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 
+	log.Println("application::apiViewHandler():: ", id)
+
 	// we are good to go - spit fetched successfully
 	result := &APIViewResult{
 		Id: s.IdHashOnly(), Content: s.Content, SpitType: s.SpitType,
