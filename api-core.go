@@ -45,7 +45,7 @@ func (e *ErrCoreAddDB) Error() string {
 	return fmt.Sprintf("ErrCoreAddDB: %v\nSpit: %v", e.Message, e.NewSpit)
 }
 
-// does the core execution of a new media spit addition.
+// CoreAddMultiSpit does the core execution of a new spit addition.
 // @param r: the request of the addition
 // returns either the Spit successfully added and saved
 // or an error ErrCoreAddDB if something went wrong during the creation or save of the spit

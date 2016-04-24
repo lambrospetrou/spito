@@ -16,7 +16,9 @@ type Storager interface {
 func NewDynamoStorager() Storager {
 	session := session.New()
 	svc := dynamodb.New(session, aws.NewConfig().WithRegion("eu-west-1"))
-	return &awsDynamoDBStorager{session, svc}
+	dynamoDBStorager := &awsDynamoDBStorager{session, svc}
+	dynamoDBStorager.init()
+	return dynamoDBStorager
 }
 
 func NewDefaultStorager() Storager {

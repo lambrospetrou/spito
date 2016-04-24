@@ -8,13 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/lambrospetrou/spito/ids"
 	"github.com/lambrospetrou/spito/utils"
 )
 
 const (
-	SPIT_MAX_CONTENT int    = 10000
-	_SPIT_KEY_PREFIX string = "spit::id::"
-	_SPIT_CNT_PREFIX string = "spit::cnt::"
+	SPIT_MAX_CONTENT int = 10000
 )
 
 func _BuildSpitKey(id string) string {
@@ -96,7 +95,7 @@ func nextSpitId(db *lpdb.CDB) (uint64, error) {
 }
 */
 func ValidateSpitId(id string) bool {
-	return ValidateId(id)
+	return ids.ValidateId(id)
 }
 
 func AbsoluteUrl(spit *Spit) string {
