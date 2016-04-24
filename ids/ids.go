@@ -6,10 +6,6 @@ import (
 	"github.com/lambrospetrou/goencoding/lpenc"
 )
 
-const SPIT_ID_CHARS string = "Ca1MoKtUR5A2BfeGm8LWwlFgHOx3hNk9ciTpuqZ7nrQjXyzJbvI64V0EYPsDSd"
-
-var _SpitIdEncoding = lpenc.NewEncoding(SPIT_ID_CHARS)
-
 var _SpitIdEncodings []*lpenc.Encoding
 
 func InitWith(chars ...string) {
@@ -30,6 +26,11 @@ func Encode(n uint64, encodingIdx int) string {
 // ValidateId validates that the given id has the right format.
 // It only checks that the characters used belong to our key space domain.
 func ValidateId(id string) bool {
-	_, err := _SpitIdEncoding.Decode(id)
-	return err == nil
+	for _, enc := range _SpitIdEncodings {
+		_, err := enc.Decode(id)
+		if err == nil {
+			return true
+		}
+	}
+	return false
 }

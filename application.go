@@ -149,7 +149,7 @@ func webRedirectHandler(w http.ResponseWriter, r *http.Request, id string) {
 		return
 	}
 
-	WEB_APP_URL := "/_/"
+	WEB_APP_URL := "/"
 
 	// No id provided redirect to the app - old version with Material
 	if len(id) == 0 {
@@ -216,23 +216,16 @@ func OKHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	// Beanstalk will pass the PORT number as env variable.
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "40090"
 	}
 	log.Println("Starting Spito at: ", port)
 
-	// Use output file
-	/*
-		f, _ := os.Create("/var/log/spitoapi/spitoapi-web-server.log")
-		defer f.Close()
-		log.SetOutput(f)
-	*/
-
 	// use all the available cores
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
-	//router := httprouter.New()
 	router := pat.New()
 
 	/////////////////
@@ -255,18 +248,19 @@ func main() {
 	/**
 	 *	SINGLE-DOUBLE LETTER DOMAINS ARE RESERVED FOR INTERNAL USAGE
 	 */
-	// downloads handler - /d/
-	fs_d := http.FileServer(http.Dir("downloads"))
-	http.Handle("/d/", http.StripPrefix("/d/", fs_d))
-	// static files handler - /s/
-	fs_s := http.FileServer(http.Dir("spitoweb/s"))
-	http.Handle("/s/", http.StripPrefix("/s/", fs_s))
-	fs_app := http.FileServer(http.Dir("spitoweb"))
-	http.Handle("/_/", http.StripPrefix("/_/", fs_app))
-	//router.ServeFiles("/static/*filepath", http.Dir("static"))
+	/*
+		// downloads handler - /d/
+		fs_d := http.FileServer(http.Dir("downloads"))
+		http.Handle("/d/", http.StripPrefix("/d/", fs_d))
+		// static files handler - /s/
+		fs_s := http.FileServer(http.Dir("spitoweb/s"))
+		http.Handle("/s/", http.StripPrefix("/s/", fs_s))
+		fs_app := http.FileServer(http.Dir("spitoweb"))
+		http.Handle("/_/", http.StripPrefix("/_/", fs_app))
+		//router.ServeFiles("/static/*filepath", http.Dir("static"))
+	*/
 
 	http.ListenAndServe(":"+port, nil)
-	//http.ListenAndServe(":40090", router)
 }
 
 //////////////////////// HELPERS ////////////////////
