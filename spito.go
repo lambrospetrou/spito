@@ -61,9 +61,8 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 	s, err := CoreAddMultiSpit(r)
 
 	if err != nil {
-		if _, ok := err.(*ErrCoreAdd); ok {
+		if validationRes, ok := err.(*ErrCoreAdd); ok {
 			// it was an error during request validation
-			validationRes := err.(*ErrCoreAdd)
 			errorList := make([]string, 0)
 			for _, v := range validationRes.Errors {
 				if len(strings.TrimSpace(v)) > 0 {
@@ -80,8 +79,7 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write(b)
 			return
-		} else if _, ok := err.(*ErrCoreAddDB); ok {
-			errDB := err.(*ErrCoreAddDB)
+		} else if errDB, ok := err.(*ErrCoreAddDB); ok {
 			log.Printf("apiAddHandler::Internal error: %v", errDB)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

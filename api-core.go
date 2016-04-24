@@ -26,8 +26,6 @@ var CORSAllowedOrigins map[string]bool = map[string]bool{
 
 // the struct that is passed in the Add handlers
 // when there are wrong arguments in the request.
-// InputExp: is the value of Expiration in request
-// InputContent: is the value of the content in request
 // Errors: is a map containing errors with keys 'exp' & 'content'.
 // 			Keys only exist if there is an error with them.
 type ErrCoreAdd struct {
