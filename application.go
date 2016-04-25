@@ -141,7 +141,6 @@ func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
 
 // webRedirectHandler() tries to find the Spit with the passed ID and either redirects to it
 // if it is a URL or it goes to the Spit viewer
-// NOT IN USE NOW
 func webRedirectHandler(w http.ResponseWriter, r *http.Request, id string) {
 	// make sure there is a valid Spit ID
 	if !spit.ValidateSpitId(id) {
