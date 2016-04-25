@@ -76,21 +76,18 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-
-			log.Println("application::apiAddHandler():: ", b)
-
 			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write(b)
 			return
 		} else if errDB, ok := err.(*ErrCoreAddDB); ok {
-			log.Printf("application::apiAddHandler()::Internal error: %v", errDB)
+			log.Printf("apiAddHandler::Internal error: %v", errDB)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		} else {
 			// other internal error
 			http.Error(w, err.Error(), http.StatusInternalServerError)
-			log.Fatalf("application::apiAddHandler()::Unknown Error: %v", err)
+			log.Fatalf("apiAddHandler::Unknown Error: %v", err)
 			return
 
 		}
@@ -104,12 +101,10 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	b, err := json.Marshal(result)
 	if err != nil {
-		log.Printf("application::apiAddHandler()::Internal error while marshalling spit: %v", err)
+		log.Printf("apiAddHandler::Internal error while marshalling spit: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Println("application::apiAddHandler():: ", b)
-
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write(b)
@@ -118,14 +113,14 @@ func apiAddHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
-	log.Println("application::apiViewHandler():: ", id)
-
 	// fetch the Spit with the requested id
 	s, err := spit.Load(id)
 	if err != nil {
 		http.NotFound(w, r)
 		return
 	}
+
+	log.Println("application::apiViewHandler():: ", id)
 
 	// we are good to go - spit fetched successfully
 	result := &APIViewResult{
@@ -148,6 +143,7 @@ func apiViewHandler(w http.ResponseWriter, r *http.Request, id string) {
 
 // webRedirectHandler() tries to find the Spit with the passed ID and either redirects to it
 // if it is a URL or it goes to the Spit viewer
+// NOT IN USE NOW
 func webRedirectHandler(w http.ResponseWriter, r *http.Request, id string) {
 	// make sure there is a valid Spit ID
 	if !spit.ValidateSpitId(id) {
