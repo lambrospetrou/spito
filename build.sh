@@ -3,7 +3,7 @@
 DIR_BUILD="build"
 
 rm -rf $DIR_BUILD
-mkdir $DIR_BUILD
+mkdir -p $DIR_BUILD
 go build -o "$DIR_BUILD/bin/spito"
 
 # Copy all required files to the bin folder
