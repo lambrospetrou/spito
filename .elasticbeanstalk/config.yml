@@ -1,0 +1,12 @@
+branch-defaults:
+  master:
+    environment: spito-api-beta
+global:
+  application_name: spito-api
+  default_ec2_keyname: null
+  default_platform: 64bit Amazon Linux 2016.03 v2.1.0 running Go 1.4
+  default_region: eu-west-1
+  profile: null
+  sc: git
+deploy:
+  artifact: "build/spitoapi-bundle.zip"
