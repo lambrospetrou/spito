@@ -1,8 +1,8 @@
 #!/bin/sh
 
-IP="127.0.0.1"
 if [ -z "$1" ]; then 
-	echo "IP not given... using default $IP";  
+	echo "IP not given...trying EC2 metadata...";
+	IP=$( curl http://169.254.169.254/latest/meta-data/public-ipv4 )  
 else 
 	IP="$1" 
 fi 
